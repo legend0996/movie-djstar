@@ -36,8 +36,9 @@ export default function RegisterPage() {
         password: form.password,
         confirmPassword: form.password,
       });
-      if (data.data.user) login(data.data);
-      navigate('/verify-email', { state: { code: data.data.verificationCode } });
+      navigate('/verify-email', {
+        state: { email: form.email, code: data.data.verificationCode },
+      });
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
     }

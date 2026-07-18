@@ -6,6 +6,7 @@ import client from '../../api/client';
 
 export default function VerifyEmailPage() {
   const { state } = useLocation();
+  const email = state?.email || '';
   const [code, setCode] = useState(state?.code || '');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,7 +24,7 @@ export default function VerifyEmailPage() {
     setLoading(true);
     setError('');
     try {
-      const { data } = await client.post('/auth/verify-email', { email: user?.email, code });
+      const { data } = await client.post('/auth/verify-email', { email, code });
       if (data.data) updateUser(data.data);
       setSuccess(true);
       setTimeout(() => navigate('/'), 2000);
@@ -36,7 +37,7 @@ export default function VerifyEmailPage() {
   async function handleResend() {
     setResending(true);
     try {
-      await client.post('/auth/resend-verification', { email: user?.email });
+      await client.post('/auth/resend-verification', { email });
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to resend code');
     }
@@ -95,7 +96,7 @@ export default function VerifyEmailPage() {
 
           <h1 className="font-heading font-bold text-3xl text-white mb-1">Verify Your Email</h1>
           <p className="text-gray-500 mb-2">
-            Enter the 6-digit code sent to <strong className="text-white">{user?.email || 'your email'}</strong>
+            Enter the 6-digit code sent to <strong className="text-white">{email || 'your email'}</strong>
           </p>
           {state?.code && (
             <p className="text-brand-accent text-sm mb-6 font-mono bg-brand-card rounded-lg p-2 text-center">
