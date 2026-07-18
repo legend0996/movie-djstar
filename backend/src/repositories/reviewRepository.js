@@ -22,7 +22,7 @@ const reviewRepository = {
 
   async findByUserAndMovie(userId, movieId) {
     return prisma.review.findUnique({
-      where: { userId_movieId: { userId, movieId } },
+      where: { uq_review_user_movie: { userId, movieId } },
     });
   },
 

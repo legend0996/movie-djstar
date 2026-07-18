@@ -5,9 +5,11 @@ export function useFetch(key, url, options = {}) {
   return useQuery({
     queryKey: Array.isArray(key) ? key : [key],
     queryFn: async () => {
+      if (!url) return null;
       const { data } = await client.get(url, { params: options.params });
       return data;
     },
+    enabled: !!url,
     ...options,
   });
 }
