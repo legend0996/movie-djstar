@@ -21,9 +21,11 @@ export default function WatchPage() {
 
   const handleProgress = useCallback((time) => {
     if (movie?.data?.id) {
-      client.post(`/movies/${movie.data.id}/progress`, {
-        progress: time,
-        duration: 0,
+      client.post(`/movies/library/progress`, {
+        movieId: movie.data.id,
+        positionSeconds: time,
+        durationSeconds: 0,
+        completed: false,
       }).catch(() => {});
     }
   }, [movie]);

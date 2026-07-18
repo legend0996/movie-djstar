@@ -16,7 +16,7 @@ const tabs = [
 export default function ReceiptsPage() {
   const [page, setPage] = useState(1);
   const location = useLocation();
-  const { data, isLoading } = useFetch(['receipts', page], `/receipts?page=${page}&limit=20`);
+  const { data, isLoading } = useFetch(['receipts', page], `/payments/receipts?page=${page}&limit=20`);
 
   return (
     <div className="min-h-screen bg-brand-bg pt-24 pb-12">

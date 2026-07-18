@@ -16,7 +16,7 @@ const tabs = [
 export default function MyLibraryPage() {
   const [page, setPage] = useState(1);
   const location = useLocation();
-  const { data, isLoading } = useFetch(['library', page], `/library?page=${page}&limit=20`);
+  const { data, isLoading } = useFetch(['library', page], `/movies/library/list?page=${page}&limit=20`);
 
   return (
     <div className="min-h-screen bg-brand-bg pt-24 pb-12">
