@@ -89,8 +89,14 @@ const paymentService = {
         status: TRANSACTION_STATUS.FAILED,
         resultDescription: err.message,
       });
-      paymentLogger.error('STK push initiation failed', { error: err.message, userId, movieId });
-      throw new PaymentError('Failed to initiate payment. Please try again.');
+      paymentLogger.error('STK push initiation failed', {
+        transactionId,
+        error: err.message,
+        userId,
+        movieId,
+        amount: movie.price,
+      });
+      throw new PaymentError(`Payment service error: ${err.message}`);
     }
 
     if (stkResponse.ResponseCode === '0') {
@@ -124,18 +130,34 @@ const paymentService = {
       };
     }
 
+    // Handle M-Pesa error response codes
+    const mpesaErrorMap = {
+      '1': 'Insufficient funds or invalid account',
+      '2': 'System error - please try again',
+      '17': 'Invalid phone number',
+      '20': 'Invalid amount',
+      '26': 'Transaction rejected',
+      '8': 'System error - contact administrator',
+    };
+
+    const errorMessage = mpesaErrorMap[stkResponse.ResponseCode] || 
+                         stkResponse.ResponseDescription || 
+                         'M-Pesa payment initiation failed';
+
     await transactionRepository.update(transactionId, {
       status: TRANSACTION_STATUS.FAILED,
       resultCode: stkResponse.ResponseCode,
-      resultDescription: stkResponse.ResponseDescription || 'STK Push failed',
+      resultDescription: errorMessage,
     });
 
     paymentLogger.warn('STK push rejected by M-Pesa', {
+      transactionId,
       responseCode: stkResponse.ResponseCode,
       responseDescription: stkResponse.ResponseDescription,
+      amount: movie.price,
     });
 
-    throw new PaymentError(stkResponse.ResponseDescription || 'Payment initiation failed');
+    throw new PaymentError(errorMessage);
   },
 
   async handleCallback(callbackBody) {
@@ -175,13 +197,21 @@ const paymentService = {
     });
 
     if (callback.resultCode === 0) {
-      await transactionRepository.update(transaction.id, {
-        status: TRANSACTION_STATUS.SUCCESS,
-        mpesaReceipt: callback.mpesaReceipt,
-        transactionDate: callback.transactionDate
-          ? new Date(callback.transactionDate.toString())
-          : new Date(),
-      });
+      try {
+        const prisma = require('../config/database');
+        const r = await prisma.transaction.update({
+          where: { id: transaction.id },
+          data: {
+            status: 'successful',
+            mpesaReceipt: callback.mpesaReceipt,
+            transactionDate: callback.transactionDate
+              ? new Date(callback.transactionDate.toString())
+              : new Date(),
+          },
+        });
+      } catch (e) {
+        console.log('DIRECT_UPDATE_ERROR_MSG=' + JSON.stringify({message: e.message, code: e.code, name: e.name, stack: (e.stack || '').slice(0, 200)}));
+      }
 
       await orderRepository.updateStatus(transaction.orderId, {
         status: ORDER_STATUS.COMPLETED,
@@ -201,7 +231,6 @@ const paymentService = {
         await movieRepository.incrementPurchases(item.movieId);
       }
 
-      const prisma = require('../config/database');
       const commissionPercentage = config.commission.developerPercentage;
       const developerCommission = (transaction.amount * commissionPercentage) / 100;
       const ownerEarnings = transaction.amount - developerCommission;

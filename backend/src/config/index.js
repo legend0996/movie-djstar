@@ -44,6 +44,7 @@ const envSchema = Joi.object({
   MPESA_PASSKEY: Joi.string().allow('').default(''),
   MPESA_SHORTCODE: Joi.string().allow('').default(''),
   MPESA_ENVIRONMENT: Joi.string().valid('sandbox', 'production').default('sandbox'),
+  MPESA_TILL_NUMBER: Joi.string().allow('').default(''),
   MPESA_CALLBACK_URL: Joi.string().uri().allow('').default(''),
   MPESA_TIMEOUT_URL: Joi.string().uri().allow('').default(''),
 
@@ -162,6 +163,7 @@ const config = Object.freeze({
     consumerSecret: env.MPESA_CONSUMER_SECRET,
     passkey: env.MPESA_PASSKEY,
     shortCode: env.MPESA_SHORTCODE,
+    tillNumber: env.MPESA_TILL_NUMBER || env.MPESA_SHORTCODE,
     environment: env.MPESA_ENVIRONMENT,
     callbackUrl: env.MPESA_CALLBACK_URL,
     timeoutUrl: env.MPESA_TIMEOUT_URL,

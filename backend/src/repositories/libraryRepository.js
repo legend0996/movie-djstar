@@ -3,7 +3,7 @@ const prisma = require('../config/database');
 const libraryRepository = {
   async addToLibrary(userId, movieId, orderId, purchasePrice) {
     await prisma.userLibrary.upsert({
-      where: { userId_movieId: { userId, movieId } },
+      where: { uq_library_user_movie: { userId, movieId } },
       update: { isAvailable: true, orderId },
       create: { userId, movieId, orderId, purchasePrice },
     });
@@ -63,7 +63,7 @@ const libraryRepository = {
 
   async savePlaybackProgress(userId, movieId, positionSeconds, durationSeconds, completed = false) {
     await prisma.playbackProgress.upsert({
-      where: { userId_movieId: { userId, movieId } },
+      where: { uq_pp_user_movie: { userId, movieId } },
       update: {
         positionSeconds,
         durationSeconds,
@@ -83,7 +83,7 @@ const libraryRepository = {
 
   async getPlaybackProgress(userId, movieId) {
     return prisma.playbackProgress.findUnique({
-      where: { userId_movieId: { userId, movieId } },
+      where: { uq_pp_user_movie: { userId, movieId } },
     });
   },
 

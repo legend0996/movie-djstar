@@ -53,7 +53,7 @@ const TICKET_STATUS = Object.freeze({
 
 const TRANSACTION_STATUS = Object.freeze({
   PENDING: 'pending',
-  SUCCESS: 'success',
+  SUCCESS: 'successful',
   FAILED: 'failed',
   CANCELLED: 'cancelled',
 });
