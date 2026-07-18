@@ -8,7 +8,7 @@ const reviewRepository = {
         movieId: data.movieId,
         rating: data.rating,
         comment: data.comment || null,
-      }
+      },
     });
     return review.id;
   },
@@ -16,13 +16,13 @@ const reviewRepository = {
   async findById(id) {
     return prisma.review.findUnique({
       where: { id },
-      include: { user: { select: { id: true, username: true, avatarUrl: true } } }
+      include: { user: { select: { id: true, username: true, avatarUrl: true } } },
     });
   },
 
   async findByUserAndMovie(userId, movieId) {
     return prisma.review.findUnique({
-      where: { userId_movieId: { userId, movieId } }
+      where: { userId_movieId: { userId, movieId } },
     });
   },
 
@@ -35,9 +35,9 @@ const reviewRepository = {
         include: { user: { select: { id: true, username: true, avatarUrl: true } } },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
-        take: limit
+        take: limit,
       }),
-      prisma.review.count({ where })
+      prisma.review.count({ where }),
     ]);
 
     return { rows, total };
@@ -51,7 +51,7 @@ const reviewRepository = {
         updateData[key] = value;
       }
     }
-    if (Object.keys(updateData).length === 0) return false;
+    if (Object.keys(updateData).length === 0) {return false;}
     await prisma.review.update({ where: { id }, data: updateData });
     return true;
   },
@@ -74,7 +74,7 @@ const reviewRepository = {
   },
 
   async getMoviesStats(movieIds) {
-    if (!movieIds || movieIds.length === 0) return {};
+    if (!movieIds || movieIds.length === 0) {return {};}
     const stats = await prisma.review.groupBy({
       by: ['movieId'],
       where: { movieId: { in: movieIds } },

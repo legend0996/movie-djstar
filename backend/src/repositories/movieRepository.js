@@ -4,14 +4,14 @@ const movieRepository = {
   async findById(id) {
     return prisma.movie.findUnique({
       where: { id },
-      include: { category: true }
+      include: { category: true },
     });
   },
 
   async findBySlug(slug) {
     return prisma.movie.findFirst({
       where: { slug, deletedAt: null },
-      include: { category: true }
+      include: { category: true },
     });
   },
 
@@ -46,8 +46,8 @@ const movieRepository = {
         episodeNumber: data.episodeNumber || null,
         seasonNumber: data.seasonNumber || null,
         publishedAt: data.publishedAt || null,
-        createdBy: data.createdBy || null
-      }
+        createdBy: data.createdBy || null,
+      },
     });
     return movie.id;
   },
@@ -59,7 +59,7 @@ const movieRepository = {
       'director', 'castMembers', 'posterUrl', 'coverUrl', 'trailerUrl',
       'thumbnailUrl', 'movieUrl', 'movieSize', 'movieFormat', 'price',
       'isFree', 'isFeatured', 'status', 'isSeries', 'seriesId',
-      'episodeNumber', 'seasonNumber', 'publishedAt'
+      'episodeNumber', 'seasonNumber', 'publishedAt',
     ];
     const updateData = {};
     for (const [key, value] of Object.entries(data)) {
@@ -67,7 +67,7 @@ const movieRepository = {
         updateData[key] = value;
       }
     }
-    if (Object.keys(updateData).length === 0) return false;
+    if (Object.keys(updateData).length === 0) {return false;}
     await prisma.movie.update({ where: { id }, data: updateData });
     return true;
   },
@@ -75,7 +75,7 @@ const movieRepository = {
   async delete(id) {
     await prisma.movie.update({
       where: { id },
-      data: { deletedAt: new Date(), status: 'archived' }
+      data: { deletedAt: new Date(), status: 'archived' },
     });
     return true;
   },
@@ -101,7 +101,7 @@ const movieRepository = {
       where.OR = [
         { title: { contains: search } },
         { description: { contains: search } },
-        { shortDescription: { contains: search } }
+        { shortDescription: { contains: search } },
       ];
     }
 
@@ -122,9 +122,9 @@ const movieRepository = {
         include: { category: true },
         orderBy,
         skip: (page - 1) * limit,
-        take: limit
+        take: limit,
       }),
-      prisma.movie.count({ where })
+      prisma.movie.count({ where }),
     ]);
 
     return { rows, total };
@@ -133,7 +133,7 @@ const movieRepository = {
   async incrementViews(id) {
     await prisma.movie.update({
       where: { id },
-      data: { totalViews: { increment: 1 } }
+      data: { totalViews: { increment: 1 } },
     });
   },
 
@@ -142,8 +142,8 @@ const movieRepository = {
       where: { id },
       data: {
         totalPurchases: { increment: 1 },
-        popularityScore: { increment: 10 }
-      }
+        popularityScore: { increment: 10 },
+      },
     });
   },
 
@@ -152,8 +152,8 @@ const movieRepository = {
       where: { id },
       data: {
         totalStreams: { increment: 1 },
-        popularityScore: { increment: 3 }
-      }
+        popularityScore: { increment: 3 },
+      },
     });
   },
 
@@ -162,8 +162,8 @@ const movieRepository = {
       where: { id },
       data: {
         totalDownloads: { increment: 1 },
-        popularityScore: { increment: 5 }
-      }
+        popularityScore: { increment: 5 },
+      },
     });
   },
 
@@ -172,7 +172,7 @@ const movieRepository = {
       where: { status: 'published', deletedAt: null },
       include: { category: true },
       orderBy: { popularityScore: 'desc' },
-      take: limit
+      take: limit,
     });
   },
 
@@ -181,7 +181,7 @@ const movieRepository = {
       where: { status: 'published', deletedAt: null },
       include: { category: true },
       orderBy: { publishedAt: 'desc' },
-      take: limit
+      take: limit,
     });
   },
 
@@ -190,7 +190,7 @@ const movieRepository = {
       where: { status: 'published', isFeatured: true, deletedAt: null },
       include: { category: true },
       orderBy: { popularityScore: 'desc' },
-      take: limit
+      take: limit,
     });
   },
 
@@ -201,7 +201,7 @@ const movieRepository = {
       where.OR = [
         { title: { search: query } },
         { description: { search: query } },
-        { shortDescription: { search: query } }
+        { shortDescription: { search: query } },
       ];
     }
     if (category) {
@@ -214,9 +214,9 @@ const movieRepository = {
         include: { category: true },
         orderBy: { popularityScore: 'desc' },
         skip: (page - 1) * limit,
-        take: limit
+        take: limit,
       }),
-      prisma.movie.count({ where })
+      prisma.movie.count({ where }),
     ]);
 
     return { rows, total };
@@ -224,13 +224,13 @@ const movieRepository = {
 
   async countByStatus(status) {
     return prisma.movie.count({
-      where: { status, deletedAt: null }
+      where: { status, deletedAt: null },
     });
   },
 
   async countAll() {
     return prisma.movie.count({ where: { deletedAt: null } });
-  }
+  },
 };
 
 module.exports = movieRepository;

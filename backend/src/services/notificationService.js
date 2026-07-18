@@ -11,7 +11,7 @@ const notificationService = {
 
   async getUserNotifications(userId, { page = 1, limit = 20, unreadOnly = false } = {}) {
     const { rows, total } = await notificationRepository.getUserNotifications(userId, {
-      page, limit, unreadOnly
+      page, limit, unreadOnly,
     });
     const unreadCount = await notificationRepository.getUnreadCount(userId);
     return { rows, total, unread: unreadCount };

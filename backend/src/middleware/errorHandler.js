@@ -87,7 +87,7 @@ function errorHandler(err, req, res, _next) {
 
   return res.status(500).json({
     success: false,
-    message: config.isDev ? err.message : 'Internal server error',
+    message: config.isDev || config.isTest ? err.message : 'Internal server error',
     errorCode: 'INTERNAL_ERROR',
     details: null,
   });

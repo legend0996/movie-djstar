@@ -14,14 +14,14 @@ const streamService = {
 
   async streamMovie(userId, movieId, range, ip, userAgent) {
     const movie = await this.resolveMovie(movieId);
-    if (!movie) throw new NotFoundError('Movie not found');
+    if (!movie) {throw new NotFoundError('Movie not found');}
 
     const owned = await libraryRepository.isOwned(userId, movie.id);
-    if (!owned) throw new ForbiddenError('You do not own this movie');
-    if (!movie.movie_url) throw new NotFoundError('Movie file not available');
+    if (!owned) {throw new ForbiddenError('You do not own this movie');}
+    if (!movie.movie_url) {throw new NotFoundError('Movie file not available');}
 
     const fileMetadata = await r2Service.getFileMetadata(movie.movie_url);
-    if (!fileMetadata) throw new NotFoundError('Movie file not found in storage');
+    if (!fileMetadata) {throw new NotFoundError('Movie file not found in storage');}
 
     const fileSize = fileMetadata.contentLength;
     const contentType = fileMetadata.contentType || 'video/mp4';
@@ -66,11 +66,11 @@ const streamService = {
 
   async streamTrailer(movieId, range) {
     const movie = await this.resolveMovie(movieId);
-    if (!movie) throw new NotFoundError('Movie not found');
-    if (!movie.trailer_url) throw new NotFoundError('Trailer not available');
+    if (!movie) {throw new NotFoundError('Movie not found');}
+    if (!movie.trailer_url) {throw new NotFoundError('Trailer not available');}
 
     const fileMetadata = await r2Service.getFileMetadata(movie.trailer_url);
-    if (!fileMetadata) throw new NotFoundError('Trailer file not found');
+    if (!fileMetadata) {throw new NotFoundError('Trailer file not found');}
 
     const fileSize = fileMetadata.contentLength;
     const contentType = fileMetadata.contentType || 'video/mp4';
@@ -110,14 +110,14 @@ const streamService = {
 
   async downloadMovie(userId, movieId, ip, userAgent) {
     const movie = await this.resolveMovie(movieId);
-    if (!movie) throw new NotFoundError('Movie not found');
+    if (!movie) {throw new NotFoundError('Movie not found');}
 
     const owned = await libraryRepository.isOwned(userId, movie.id);
-    if (!owned) throw new ForbiddenError('You do not own this movie');
-    if (!movie.movie_url) throw new NotFoundError('Movie file not available');
+    if (!owned) {throw new ForbiddenError('You do not own this movie');}
+    if (!movie.movie_url) {throw new NotFoundError('Movie file not available');}
 
     const fileMetadata = await r2Service.getFileMetadata(movie.movie_url);
-    if (!fileMetadata) throw new NotFoundError('Movie file not found in storage');
+    if (!fileMetadata) {throw new NotFoundError('Movie file not found in storage');}
 
     const filename = `${movie.slug}.${movie.movie_format || 'mp4'}`;
     const streamData = await r2Service.getFileStream(movie.movie_url);
@@ -138,11 +138,11 @@ const streamService = {
 
   async getSignedDownloadUrl(userId, movieId) {
     const movie = await this.resolveMovie(movieId);
-    if (!movie) throw new NotFoundError('Movie not found');
+    if (!movie) {throw new NotFoundError('Movie not found');}
 
     const owned = await libraryRepository.isOwned(userId, movie.id);
-    if (!owned) throw new ForbiddenError('You do not own this movie');
-    if (!movie.movie_url) throw new NotFoundError('Movie file not available');
+    if (!owned) {throw new ForbiddenError('You do not own this movie');}
+    if (!movie.movie_url) {throw new NotFoundError('Movie file not available');}
 
     const signedUrl = await r2Service.getSignedDownloadUrl(movie.movie_url, 3600);
 

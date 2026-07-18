@@ -71,7 +71,7 @@ const authService = {
 
   async loginStep1(identifier) {
     let user = await userRepository.findByUsername(identifier);
-    if (!user) user = await userRepository.findByEmail(identifier);
+    if (!user) {user = await userRepository.findByEmail(identifier);}
     if (!user) {
       return { exists: false };
     }
@@ -96,7 +96,7 @@ const authService = {
 
   async loginStep2(identifier, password) {
     let user = await userRepository.findByUsername(identifier);
-    if (!user) user = await userRepository.findByEmail(identifier);
+    if (!user) {user = await userRepository.findByEmail(identifier);}
     if (!user) {
       throw new UnauthorizedError('Invalid credentials');
     }
@@ -134,7 +134,7 @@ const authService = {
     await db.execute(
       `INSERT INTO user_sessions (user_id, token, refresh_token, ip_address, user_agent, expires_at)
        VALUES (?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY))`,
-      [user.id, tokens.accessToken, tokens.refreshToken, null, null]
+      [user.id, tokens.accessToken, tokens.refreshToken, null, null],
     );
 
     await logActivity(user.id, 'login', 'user', user.id);
@@ -168,7 +168,7 @@ const authService = {
        WHERE user_id = ? AND code = ? AND type = ?
          AND used_at IS NULL AND expires_at > NOW()
        ORDER BY created_at DESC LIMIT 1`,
-      [user.id, code, VERIFICATION_TYPE.EMAIL]
+      [user.id, code, VERIFICATION_TYPE.EMAIL],
     );
 
     const verification = codes?.[0];
@@ -177,8 +177,8 @@ const authService = {
     }
 
     await db.execute(
-      `UPDATE verification_codes SET used_at = NOW() WHERE id = ?`,
-      [verification.id]
+      'UPDATE verification_codes SET used_at = NOW() WHERE id = ?',
+      [verification.id],
     );
 
     await userRepository.update(user.id, {
@@ -258,7 +258,7 @@ const authService = {
        WHERE user_id = ? AND code = ? AND type = ?
          AND used_at IS NULL AND expires_at > NOW()
        ORDER BY created_at DESC LIMIT 1`,
-      [user.id, code, VERIFICATION_TYPE.PASSWORD_RESET]
+      [user.id, code, VERIFICATION_TYPE.PASSWORD_RESET],
     );
 
     const verification = codes?.[0];
@@ -271,14 +271,14 @@ const authService = {
     }
 
     await db.execute(
-      `UPDATE verification_codes SET used_at = NOW() WHERE id = ?`,
-      [verification.id]
+      'UPDATE verification_codes SET used_at = NOW() WHERE id = ?',
+      [verification.id],
     );
 
     await db.execute(
       `UPDATE verification_codes SET used_at = NOW()
        WHERE user_id = ? AND type = ? AND used_at IS NULL`,
-      [user.id, VERIFICATION_TYPE.PASSWORD_RESET]
+      [user.id, VERIFICATION_TYPE.PASSWORD_RESET],
     );
 
     const passwordHash = await bcrypt.hash(newPassword, config.security.bcryptSaltRounds);
@@ -290,7 +290,7 @@ const authService = {
     await db.execute(
       `UPDATE user_sessions SET is_active = 0, revoked_at = NOW()
        WHERE user_id = ? AND is_active = 1`,
-      [user.id]
+      [user.id],
     );
 
     await logActivity(user.id, 'password_reset', 'user', user.id);
@@ -324,7 +324,7 @@ const authService = {
     await db.execute(
       `UPDATE user_sessions SET is_active = 0, revoked_at = NOW()
        WHERE user_id = ? AND is_active = 1`,
-      [userId]
+      [userId],
     );
 
     await logActivity(userId, 'password_changed', 'user', userId);
@@ -342,7 +342,7 @@ const authService = {
     await db.execute(
       `UPDATE user_sessions SET is_active = 0, revoked_at = NOW()
        WHERE user_id = ? AND token = ?`,
-      [userId, token]
+      [userId, token],
     );
     await logActivity(userId, 'logout', 'user', userId);
     return { message: 'Logged out successfully.' };
@@ -359,7 +359,7 @@ const authService = {
       `SELECT COUNT(*) as total_purchases,
               COALESCE(SUM(total_amount), 0) as total_spent
        FROM orders WHERE user_id = ? AND payment_status = 'paid'`,
-      [userId]
+      [userId],
     );
 
     return {
@@ -385,10 +385,10 @@ const authService = {
 
   async updateProfile(userId, data) {
     const updates = {};
-    if (data.firstName !== undefined) updates.firstName = data.firstName;
-    if (data.lastName !== undefined) updates.lastName = data.lastName;
-    if (data.phone !== undefined) updates.phone = parsePhoneNumber(data.phone);
-    if (data.avatarUrl !== undefined) updates.avatarUrl = data.avatarUrl;
+    if (data.firstName !== undefined) {updates.firstName = data.firstName;}
+    if (data.lastName !== undefined) {updates.lastName = data.lastName;}
+    if (data.phone !== undefined) {updates.phone = parsePhoneNumber(data.phone);}
+    if (data.avatarUrl !== undefined) {updates.avatarUrl = data.avatarUrl;}
 
     if (Object.keys(updates).length === 0) {
       return { message: 'No changes to update.' };
@@ -404,7 +404,7 @@ const authService = {
     await db.execute(
       `UPDATE verification_codes SET used_at = NOW()
        WHERE user_id = ? AND type = ? AND used_at IS NULL`,
-      [userId, type]
+      [userId, type],
     );
 
     const code = generateVerificationCode();
@@ -416,7 +416,7 @@ const authService = {
     await db.execute(
       `INSERT INTO verification_codes (user_id, code, type, expires_at)
        VALUES (?, ?, ?, ?)`,
-      [userId, code, type, expiresAt]
+      [userId, code, type, expiresAt],
     );
 
     return code;
@@ -434,7 +434,7 @@ const authService = {
         expiresIn: config.jwt.expiresIn,
         issuer: config.jwt.issuer,
         jwtid: crypto.randomUUID(),
-      }
+      },
     );
 
     const refreshToken = jwt.sign(
@@ -444,7 +444,7 @@ const authService = {
         expiresIn: config.jwt.refreshExpiresIn,
         issuer: config.jwt.issuer,
         jwtid: crypto.randomUUID(),
-      }
+      },
     );
 
     return { accessToken, refreshToken };
@@ -461,8 +461,8 @@ const authService = {
       }
 
       const [sessions] = await db.query(
-        `SELECT * FROM user_sessions WHERE refresh_token = ? AND is_active = 1 AND revoked_at IS NULL`,
-        [refreshToken]
+        'SELECT * FROM user_sessions WHERE refresh_token = ? AND is_active = 1 AND revoked_at IS NULL',
+        [refreshToken],
       );
 
       if (!sessions?.length) {
@@ -479,12 +479,12 @@ const authService = {
       await db.execute(
         `UPDATE user_sessions SET token = ?, refresh_token = ?, expires_at = DATE_ADD(NOW(), INTERVAL 7 DAY)
          WHERE id = ?`,
-        [tokens.accessToken, tokens.refreshToken, sessions[0].id]
+        [tokens.accessToken, tokens.refreshToken, sessions[0].id],
       );
 
       return tokens;
     } catch (err) {
-      if (err instanceof UnauthorizedError) throw err;
+      if (err instanceof UnauthorizedError) {throw err;}
       throw new UnauthorizedError('Invalid or expired refresh token');
     }
   },

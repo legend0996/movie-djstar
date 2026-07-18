@@ -2,6 +2,7 @@ const request = require('supertest');
 const app = require('../../app');
 const movieRepository = require('../../repositories/movieRepository');
 const categoryRepository = require('../../repositories/categoryRepository');
+const userRepository = require('../../repositories/userRepository');
 const { createMockUser, createMockMovie, createMockToken } = require('../helpers/testFactory');
 
 
@@ -14,6 +15,10 @@ describe('Movies Integration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
+
+  function setupAuth(mockUser) {
+    userRepository.findById.mockResolvedValue(mockUser);
+  }
 
   describe('GET /api/movies', () => {
     it('returns 200 with movie list', async () => {
@@ -117,6 +122,7 @@ describe('Movies Integration', () => {
 
     it('returns 403 as user role', async () => {
       const token = createMockToken(user);
+      setupAuth(user);
 
       const res = await request(app)
         .post('/api/movies')
@@ -127,6 +133,7 @@ describe('Movies Integration', () => {
 
     it('returns 201 as movie_owner', async () => {
       const token = createMockToken(movieOwner);
+      setupAuth(movieOwner);
       movieRepository.findBySlug.mockResolvedValue(null);
       movieRepository.create.mockResolvedValue(10);
       movieRepository.findById.mockResolvedValue(createMockMovie({ id: 10 }));

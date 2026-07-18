@@ -60,7 +60,7 @@ app.use(hsts);
 app.get('/api/health', async (req, res) => {
   let dbStatus = 'healthy';
   let dbError = null;
-  let uptime = process.uptime();
+  const uptime = process.uptime();
 
   try {
     await prisma.$queryRaw`SELECT 1`;

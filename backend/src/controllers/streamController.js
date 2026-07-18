@@ -10,7 +10,7 @@ const streamController = {
         req.params.id,
         range,
         req.ip,
-        req.headers['user-agent']
+        req.headers['user-agent'],
       );
 
       res.writeHead(result.statusCode, result.headers);
@@ -38,7 +38,7 @@ const streamController = {
         req.user.id,
         req.params.id,
         req.ip,
-        req.headers['user-agent']
+        req.headers['user-agent'],
       );
 
       res.writeHead(200, result.headers);

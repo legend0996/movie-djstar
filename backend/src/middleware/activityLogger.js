@@ -14,7 +14,7 @@ async function logActivity(userId, action, entityType = null, entityId = null, d
         req ? req.ip : null,
         req ? req.headers['user-agent'] : null,
         details ? JSON.stringify(details) : null,
-      ]
+      ],
     );
   } catch (err) {
     logger.error('Failed to log activity', { error: err.message, userId, action });

@@ -5,14 +5,14 @@ const categoryRepository = {
   async findById(id) {
     return prisma.category.findUnique({
       where: { id },
-      include: { parent: true }
+      include: { parent: true },
     });
   },
 
   async findBySlug(slug) {
     return prisma.category.findUnique({
       where: { slug },
-      include: { parent: true }
+      include: { parent: true },
     });
   },
 
@@ -27,8 +27,8 @@ const categoryRepository = {
         icon: data.icon || null,
         displayOrder: data.displayOrder || 0,
         isVisible: data.isVisible !== false,
-        isSeries: data.isSeries || false
-      }
+        isSeries: data.isSeries || false,
+      },
     });
     return category.id;
   },
@@ -41,7 +41,7 @@ const categoryRepository = {
         updateData[key] = value;
       }
     }
-    if (Object.keys(updateData).length === 0) return false;
+    if (Object.keys(updateData).length === 0) {return false;}
     await prisma.category.update({ where: { id }, data: updateData });
     return true;
   },
@@ -49,7 +49,7 @@ const categoryRepository = {
   async delete(id) {
     await prisma.category.updateMany({
       where: { parentId: id },
-      data: { parentId: null }
+      data: { parentId: null },
     });
     await prisma.category.delete({ where: { id } });
     return true;
@@ -65,27 +65,27 @@ const categoryRepository = {
         _count: {
           select: {
             movies: {
-              where: { deletedAt: null, status: 'published' }
-            }
-          }
-        }
+              where: { deletedAt: null, status: 'published' },
+            },
+          },
+        },
       },
-      orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }]
+      orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }],
     });
 
     return rows.map(cat => ({
       ...cat,
-      movie_count: cat._count.movies
+      movie_count: cat._count.movies,
     }));
   },
 
   async reorder(id, displayOrder) {
     await prisma.category.update({
       where: { id },
-      data: { displayOrder }
+      data: { displayOrder },
     });
     return true;
-  }
+  },
 };
 
 module.exports = categoryRepository;

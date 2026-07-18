@@ -1,8 +1,3 @@
-const authService = require('../../../services/authService');
-const userRepository = require('../../../repositories/userRepository');
-const emailService = require('../../../services/emailService');
-const { createMockUser } = require('../../helpers/testFactory');
-
 jest.mock('../../../services/emailService');
 jest.mock('bcryptjs', () => ({
   hash: jest.fn().mockResolvedValue('hashed_password'),
@@ -18,6 +13,11 @@ jest.mock('crypto', () => ({
   randomBytes: jest.fn().mockReturnValue({ toString: () => 'abcdef' }),
 }));
 
+const authService = require('../../../services/authService');
+const userRepository = require('../../../repositories/userRepository');
+const emailService = require('../../../services/emailService');
+const { createMockUser } = require('../../helpers/testFactory');
+
 describe('authService.register', () => {
   const registerData = {
     username: 'newuser',
@@ -31,10 +31,12 @@ describe('authService.register', () => {
     jest.clearAllMocks();
   });
 
-  it('creates user and returns userId', async () => {
-    userRepository.findByUsername.mockResolvedValue(null);
-    userRepository.findByEmail.mockResolvedValue(null);
-    userRepository.create.mockResolvedValue(42);
+    it('creates user and returns userId', async () => {
+      userRepository.findByUsername.mockResolvedValue(null);
+      userRepository.findByEmail.mockResolvedValue(null);
+      userRepository.create.mockResolvedValue(42);
+      const roleRepository = require('../../../repositories/roleRepository');
+      roleRepository.findBySlug.mockResolvedValue({ id: 1, slug: 'user', name: 'User' });
 
     const result = await authService.register(registerData);
 
@@ -89,7 +91,7 @@ describe('authService.loginStep2', () => {
   it('locks account after max attempts', async () => {
     bcrypt.compare.mockResolvedValue(false);
     userRepository.incrementLoginAttempts.mockResolvedValue(undefined);
-    const lockedUser = { ...user, login_attempts: 4 };
+    const lockedUser = { ...user, loginAttempts: 4, login_attempts: 4 };
     userRepository.findByUsername.mockResolvedValue(lockedUser);
 
     await expect(authService.loginStep2('testuser', 'wrong')).rejects.toMatchObject({
@@ -107,7 +109,7 @@ describe('authService.verifyEmail', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     userRepository.findByEmail.mockResolvedValue(user);
-    db.execute.mockResolvedValue([[{ id: 1, attempts: 0, max_attempts: 5 }]]);
+    db.query.mockResolvedValue([[{ id: 1, attempts: 0, max_attempts: 5 }]]);
   });
 
   it('activates user and returns tokens', async () => {
@@ -127,9 +129,9 @@ describe('authService.refreshAccessToken', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jwt.verify.mockReturnValue({ sub: 1, type: 'refresh' });
-    db.execute
-      .mockResolvedValueOnce([[{ id: 1, refresh_token: 'old-refresh' }]])
-      .mockResolvedValueOnce([[]]);
+    db.query
+      .mockResolvedValue([[{ id: 1, refresh_token: 'old-refresh' }]]);
+    db.execute.mockResolvedValue([[]]);
     userRepository.findById.mockResolvedValue(createMockUser());
   });
 
@@ -141,7 +143,7 @@ describe('authService.refreshAccessToken', () => {
 
   it('throws UnauthorizedError when session is revoked', async () => {
     jwt.verify.mockReturnValue({ sub: 1, type: 'refresh' });
-    db.execute.mockResolvedValueOnce([[]]);
+    db.query.mockResolvedValueOnce([[]]);
 
     await expect(authService.refreshAccessToken('revoked-token')).rejects.toMatchObject({
       statusCode: 401,

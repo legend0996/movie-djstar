@@ -7,25 +7,25 @@ const analyticsRepository = {
       totalMovies,
       movieAgg,
       totalRevenue,
-      recentOrders
+      recentOrders,
     ] = await Promise.all([
       prisma.user.count({
-        where: { role: { slug: 'movie_owner' }, deletedAt: null }
+        where: { role: { slug: 'movie_owner' }, deletedAt: null },
       }),
       prisma.movie.count({
-        where: { deletedAt: null }
+        where: { deletedAt: null },
       }),
       prisma.movie.aggregate({
         _sum: {
           totalViews: true,
           totalPurchases: true,
           totalStreams: true,
-          totalDownloads: true
+          totalDownloads: true,
         },
-        where: { deletedAt: null }
+        where: { deletedAt: null },
       }),
       prisma.revenueRecord.aggregate({
-        _sum: { ownerEarnings: true }
+        _sum: { ownerEarnings: true },
       }),
       prisma.order.findMany({
         where: { paymentStatus: 'paid' },
@@ -33,9 +33,9 @@ const analyticsRepository = {
         take: 10,
         include: {
           user: true,
-          items: { include: { movie: true } }
-        }
-      })
+          items: { include: { movie: true } },
+        },
+      }),
     ]);
 
     return {
@@ -46,7 +46,7 @@ const analyticsRepository = {
       total_streams: movieAgg._sum.totalStreams || 0,
       total_downloads: movieAgg._sum.totalDownloads || 0,
       total_earnings: totalRevenue._sum.ownerEarnings || 0,
-      recent_orders: recentOrders
+      recent_orders: recentOrders,
     };
   },
 
@@ -58,26 +58,26 @@ const analyticsRepository = {
       revenueAgg,
       platformStats,
       totalStreams,
-      totalDownloads
+      totalDownloads,
     ] = await Promise.all([
       prisma.user.count({ where: { deletedAt: null } }),
       prisma.movie.count({ where: { deletedAt: null } }),
       prisma.order.count(),
       prisma.order.aggregate({
         _sum: { totalAmount: true },
-        where: { paymentStatus: 'paid' }
+        where: { paymentStatus: 'paid' },
       }),
       prisma.platformStatistic.findFirst({
-        orderBy: { statDate: 'desc' }
+        orderBy: { statDate: 'desc' },
       }),
       prisma.movie.aggregate({
         _sum: { totalStreams: true },
-        where: { deletedAt: null }
+        where: { deletedAt: null },
       }),
       prisma.movie.aggregate({
         _sum: { totalDownloads: true },
-        where: { deletedAt: null }
-      })
+        where: { deletedAt: null },
+      }),
     ]);
 
     return {
@@ -87,7 +87,7 @@ const analyticsRepository = {
       total_revenue: revenueAgg._sum.totalAmount || 0,
       total_streams: totalStreams._sum.totalStreams || 0,
       total_downloads: totalDownloads._sum.totalDownloads || 0,
-      latest_platform_stats: platformStats
+      latest_platform_stats: platformStats,
     };
   },
 
@@ -96,22 +96,22 @@ const analyticsRepository = {
       prisma.order.findMany({
         where: {
           paymentStatus: 'paid',
-          paidAt: { gte: startDate, lte: endDate }
+          paidAt: { gte: startDate, lte: endDate },
         },
-        orderBy: { paidAt: 'asc' }
+        orderBy: { paidAt: 'asc' },
       }),
       prisma.revenueRecord.findMany({
         where: {
-          recordedAt: { gte: startDate, lte: endDate }
+          recordedAt: { gte: startDate, lte: endDate },
         },
-        orderBy: { recordedAt: 'asc' }
+        orderBy: { recordedAt: 'asc' },
       }),
       prisma.platformStatistic.findMany({
         where: {
-          statDate: { gte: startDate, lte: endDate }
+          statDate: { gte: startDate, lte: endDate },
         },
-        orderBy: { statDate: 'asc' }
-      })
+        orderBy: { statDate: 'asc' },
+      }),
     ]);
 
     const orderAgg = await prisma.order.aggregate({
@@ -119,19 +119,19 @@ const analyticsRepository = {
       _count: { id: true },
       where: {
         paymentStatus: 'paid',
-        paidAt: { gte: startDate, lte: endDate }
-      }
+        paidAt: { gte: startDate, lte: endDate },
+      },
     });
 
     const revenueAgg = await prisma.revenueRecord.aggregate({
       _sum: {
         totalAmount: true,
         developerCommission: true,
-        ownerEarnings: true
+        ownerEarnings: true,
       },
       where: {
-        recordedAt: { gte: startDate, lte: endDate }
-      }
+        recordedAt: { gte: startDate, lte: endDate },
+      },
     });
 
     return {
@@ -142,7 +142,7 @@ const analyticsRepository = {
       gross_revenue: revenueAgg._sum.totalAmount || 0,
       orders: paidOrders,
       revenue_records: revenueRecords,
-      daily_stats: dailyStats
+      daily_stats: dailyStats,
     };
   },
 
@@ -153,49 +153,49 @@ const analyticsRepository = {
       orders,
       revenue,
       movieAgg,
-      dailyStats
+      dailyStats,
     ] = await Promise.all([
       prisma.user.count({
         where: {
           createdAt: { gte: startDate, lte: endDate },
-          deletedAt: null
-        }
+          deletedAt: null,
+        },
       }),
       prisma.movie.count({
-        where: { deletedAt: null }
+        where: { deletedAt: null },
       }),
       prisma.order.aggregate({
         _count: { id: true },
         _sum: { totalAmount: true },
         where: {
           paymentStatus: 'paid',
-          paidAt: { gte: startDate, lte: endDate }
-        }
+          paidAt: { gte: startDate, lte: endDate },
+        },
       }),
       prisma.revenueRecord.aggregate({
         _sum: {
           developerCommission: true,
           ownerEarnings: true,
-          totalAmount: true
+          totalAmount: true,
         },
         where: {
-          recordedAt: { gte: startDate, lte: endDate }
-        }
+          recordedAt: { gte: startDate, lte: endDate },
+        },
       }),
       prisma.movie.aggregate({
         _sum: {
           totalViews: true,
           totalStreams: true,
-          totalDownloads: true
+          totalDownloads: true,
         },
-        where: { deletedAt: null }
+        where: { deletedAt: null },
       }),
       prisma.platformStatistic.findMany({
         where: {
-          statDate: { gte: startDate, lte: endDate }
+          statDate: { gte: startDate, lte: endDate },
         },
-        orderBy: { statDate: 'asc' }
-      })
+        orderBy: { statDate: 'asc' },
+      }),
     ]);
 
     return {
@@ -208,7 +208,7 @@ const analyticsRepository = {
       total_views: movieAgg._sum.totalViews || 0,
       total_streams: movieAgg._sum.totalStreams || 0,
       total_downloads: movieAgg._sum.totalDownloads || 0,
-      daily_stats: dailyStats
+      daily_stats: dailyStats,
     };
   },
 
@@ -216,9 +216,9 @@ const analyticsRepository = {
     return prisma.movieViewsDaily.findMany({
       where: {
         movieId,
-        viewDate: { gte: startDate, lte: endDate }
+        viewDate: { gte: startDate, lte: endDate },
       },
-      orderBy: { viewDate: 'asc' }
+      orderBy: { viewDate: 'asc' },
     });
   },
 
@@ -235,7 +235,7 @@ const analyticsRepository = {
         ownerEarnings: data.ownerEarnings,
         totalStreams: data.totalStreams,
         totalDownloads: data.totalDownloads,
-        activeUsers: data.activeUsers
+        activeUsers: data.activeUsers,
       },
       create: {
         statDate: date,
@@ -248,19 +248,19 @@ const analyticsRepository = {
         ownerEarnings: data.ownerEarnings || 0,
         totalStreams: data.totalStreams || 0,
         totalDownloads: data.totalDownloads || 0,
-        activeUsers: data.activeUsers || 0
-      }
+        activeUsers: data.activeUsers || 0,
+      },
     });
   },
 
   async getDailyStats(startDate, endDate) {
     return prisma.platformStatistic.findMany({
       where: {
-        statDate: { gte: startDate, lte: endDate }
+        statDate: { gte: startDate, lte: endDate },
       },
-      orderBy: { statDate: 'asc' }
+      orderBy: { statDate: 'asc' },
     });
-  }
+  },
 };
 
 module.exports = analyticsRepository;

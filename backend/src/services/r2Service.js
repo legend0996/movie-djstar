@@ -7,7 +7,7 @@ const { generateUUID } = require('../utils/helpers');
 let s3Client = null;
 
 function getS3Client() {
-  if (s3Client) return s3Client;
+  if (s3Client) {return s3Client;}
 
   if (!config.r2.endpoint || !config.r2.accessKeyId || !config.r2.secretAccessKey) {
     logger.warn('Cloudflare R2 credentials not fully configured. R2 operations will fail.');
@@ -45,7 +45,7 @@ const r2Service = {
           Key: key,
           Body: fileBuffer,
           ContentType: mimeType,
-        })
+        }),
       );
 
       logger.info('File uploaded to R2', { key, bucket: config.r2.bucket });
@@ -73,7 +73,7 @@ const r2Service = {
           Key: key,
           Body: buffer,
           ContentType: mimeType,
-        })
+        }),
       );
 
       logger.info('File stream uploaded to R2', { key, bucket: config.r2.bucket });
@@ -91,7 +91,7 @@ const r2Service = {
         new GetObjectCommand({
           Bucket: config.r2.bucket,
           Key: key,
-        })
+        }),
       );
       return response;
     } catch (err) {
@@ -159,7 +159,7 @@ const r2Service = {
         new DeleteObjectCommand({
           Bucket: config.r2.bucket,
           Key: key,
-        })
+        }),
       );
       logger.info('File deleted from R2', { key });
       return true;
@@ -176,7 +176,7 @@ const r2Service = {
         new HeadObjectCommand({
           Bucket: config.r2.bucket,
           Key: key,
-        })
+        }),
       );
       return {
         contentType: response.ContentType,

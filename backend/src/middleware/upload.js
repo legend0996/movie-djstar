@@ -14,7 +14,7 @@ function fileFilter(allowedMimeTypes) {
         `Invalid file type. Allowed types: ${allowedMimeTypes.join(', ')}`,
         400,
         'INVALID_FILE_TYPE',
-        [{ field: file.fieldname, message: `Received: ${file.mimetype}` }]
+        [{ field: file.fieldname, message: `Received: ${file.mimetype}` }],
       ));
     }
   };

@@ -82,7 +82,7 @@ const paymentService = {
         phoneNumber,
         movie.price,
         orderNumber,
-        `Purchase: ${movie.title}`
+        `Purchase: ${movie.title}`,
       );
     } catch (err) {
       await transactionRepository.update(transactionId, {
@@ -196,7 +196,7 @@ const paymentService = {
           transaction.userId,
           item.movieId,
           transaction.orderId,
-          item.itemPrice
+          item.itemPrice,
         );
         await movieRepository.incrementPurchases(item.movieId);
       }
@@ -214,7 +214,7 @@ const paymentService = {
           developerCommission,
           ownerEarnings,
           commissionPercentage,
-        }
+        },
       });
 
       const receiptNumber = generateReceiptNumber();
@@ -254,7 +254,7 @@ const paymentService = {
         'purchase_success',
         `Purchase Complete: ${movie?.title || 'Movie'}`,
         `You have successfully purchased "${movie?.title || 'Movie'}". Enjoy watching!`,
-        { movieId: movie?.id, orderId: transaction.orderId, receiptNumber }
+        { movieId: movie?.id, orderId: transaction.orderId, receiptNumber },
       );
 
       await logActivity(transaction.userId, 'purchase_completed', 'order', transaction.orderId, {
@@ -289,7 +289,7 @@ const paymentService = {
       'payment_failed',
       'Payment Failed',
       `Payment for your order was not successful. Reason: ${callback.resultDesc || 'Unknown error'}`,
-      { orderId: transaction.orderId, resultCode: callback.resultCode }
+      { orderId: transaction.orderId, resultCode: callback.resultCode },
     );
 
     await logActivity(transaction.userId, 'payment_failed', 'transaction', transaction.id, {

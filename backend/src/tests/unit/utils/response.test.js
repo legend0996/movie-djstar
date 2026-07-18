@@ -47,7 +47,7 @@ describe('response.created()', () => {
     response.created(res, { id: 42 });
     expect(res.statusCode).toBe(201);
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ success: true, data: { id: 42 } })
+      expect.objectContaining({ success: true, data: { id: 42 } }),
     );
   });
 });

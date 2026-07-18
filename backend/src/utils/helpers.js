@@ -33,7 +33,7 @@ function generateUUID() {
 }
 
 function sanitizeString(str) {
-  if (!str) return '';
+  if (!str) {return '';}
   return str.replace(/<[^>]*>/g, '').trim();
 }
 
@@ -50,7 +50,7 @@ function slugify(text) {
 }
 
 function parsePhoneNumber(phone) {
-  if (!phone) return null;
+  if (!phone) {return null;}
   let cleaned = phone.replace(/[^0-9]/g, '');
   if (cleaned.startsWith('0')) {
     cleaned = '254' + cleaned.slice(1);
@@ -89,23 +89,23 @@ async function generateUniqueSlug(baseSlug, checkFn, maxAttempts = 10) {
   let slug = baseSlug;
   for (let i = 1; i <= maxAttempts; i++) {
     const exists = await checkFn(slug);
-    if (!exists) return slug;
+    if (!exists) {return slug;}
     slug = `${baseSlug}-${i}`;
   }
   return `${baseSlug}-${Date.now()}`;
 }
 
 function maskEmail(email) {
-  if (!email) return '';
+  if (!email) {return '';}
   const atIndex = email.indexOf('@');
-  if (atIndex <= 1) return email;
+  if (atIndex <= 1) {return email;}
   return `${email[0]}****${email.slice(atIndex)}`;
 }
 
 function maskPhone(phone) {
-  if (!phone) return '';
+  if (!phone) {return '';}
   const cleaned = phone.replace(/[^0-9]/g, '');
-  if (cleaned.length < 4) return phone;
+  if (cleaned.length < 4) {return phone;}
   const last4 = cleaned.slice(-4);
   return `****${last4}`;
 }

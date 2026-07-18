@@ -6,7 +6,7 @@ const logger = require('../utils/logger');
 let transporter = null;
 
 function getTransporter() {
-  if (transporter) return transporter;
+  if (transporter) {return transporter;}
 
   if (config.email.user && config.email.pass) {
     transporter = nodemailer.createTransport({

@@ -1,10 +1,10 @@
+jest.mock('../../services/adminService');
+
 const request = require('supertest');
 const app = require('../../app');
 const adminService = require('../../services/adminService');
 const userRepository = require('../../repositories/userRepository');
 const { createMockUser, createMockToken } = require('../helpers/testFactory');
-
-jest.mock('../../services/adminService');
 
 describe('Admin Integration', () => {
   const movieOwner = createMockUser({ id: 2, role_slug: 'movie_owner', role_id: 2, username: 'movieowner' });
@@ -63,7 +63,7 @@ describe('Admin Integration', () => {
     it('returns 200 for developer', async () => {
       const token = createMockToken(developer);
       userRepository.findById.mockResolvedValue(developer);
-      userRepository.findAll.mockResolvedValue({
+      adminService.getUserManagementList.mockResolvedValue({
         rows: [createMockUser()],
         total: 1,
       });

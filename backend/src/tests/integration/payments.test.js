@@ -1,14 +1,15 @@
+jest.mock('../../services/mpesaService');
+jest.mock('../../services/emailService');
+
 const request = require('supertest');
 const app = require('../../app');
 const movieRepository = require('../../repositories/movieRepository');
 const libraryRepository = require('../../repositories/libraryRepository');
 const orderRepository = require('../../repositories/orderRepository');
 const transactionRepository = require('../../repositories/transactionRepository');
+const userRepository = require('../../repositories/userRepository');
 const mpesaService = require('../../services/mpesaService');
 const { createMockUser, createMockMovie, createMockToken } = require('../helpers/testFactory');
-
-jest.mock('../../services/mpesaService');
-jest.mock('../../services/emailService');
 
 describe('Payments Integration', () => {
   const user = createMockUser();
@@ -17,6 +18,7 @@ describe('Payments Integration', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    userRepository.findById.mockResolvedValue(user);
   });
 
   describe('POST /api/payments/purchase', () => {
@@ -58,6 +60,16 @@ describe('Payments Integration', () => {
 
   describe('POST /api/payments/mpesa-callback', () => {
     it('returns 200 with ResultCode 0 on success', async () => {
+      mpesaService.verifyCallback.mockReturnValue({
+        valid: true,
+        checkoutRequestID: 'CHECK-001',
+        resultCode: 0,
+        resultDesc: 'Success',
+        mpesaReceipt: 'MPE123456',
+        transactionDate: 20240615120000,
+        phoneNumber: '254712345678',
+      });
+
       const callbackBody = {
         Body: {
           stkCallback: {

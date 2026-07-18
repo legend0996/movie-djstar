@@ -15,8 +15,8 @@ const transactionRepository = {
         status: data.status || 'pending',
         paymentMethod: data.paymentMethod || 'mpesa_buy_goods',
         paymentProvider: data.paymentProvider || 'safaricom',
-        metadata: data.metadata || undefined
-      }
+        metadata: data.metadata || undefined,
+      },
     });
     return txn.id;
   },
@@ -24,28 +24,28 @@ const transactionRepository = {
   async findById(id) {
     return prisma.transaction.findUnique({
       where: { id },
-      include: { user: true }
+      include: { user: true },
     });
   },
 
   async findByReference(reference) {
     return prisma.transaction.findUnique({
       where: { transactionReference: reference },
-      include: { user: true }
+      include: { user: true },
     });
   },
 
   async findByCheckoutRequestId(checkoutRequestId) {
     return prisma.transaction.findFirst({
       where: { checkoutRequestId },
-      include: { user: true }
+      include: { user: true },
     });
   },
 
   async findByMerchantRequestId(merchantRequestId) {
     return prisma.transaction.findFirst({
       where: { merchantRequestId },
-      include: { user: true }
+      include: { user: true },
     });
   },
 
@@ -54,7 +54,7 @@ const transactionRepository = {
       'status', 'resultCode', 'resultDescription', 'mpesaReceipt',
       'transactionDate', 'callbackReceivedAt', 'callbackData',
       'merchantRequestId', 'checkoutRequestId', 'transactionReference',
-      'orderId', 'phoneNumber'
+      'orderId', 'phoneNumber',
     ];
     const updateData = {};
     for (const [key, value] of Object.entries(data)) {
@@ -62,7 +62,7 @@ const transactionRepository = {
         updateData[key] = value;
       }
     }
-    if (Object.keys(updateData).length === 0) return false;
+    if (Object.keys(updateData).length === 0) {return false;}
     await prisma.transaction.update({ where: { id }, data: updateData });
     return true;
   },
@@ -75,9 +75,9 @@ const transactionRepository = {
         where,
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
-        take: limit
+        take: limit,
       }),
-      prisma.transaction.count({ where })
+      prisma.transaction.count({ where }),
     ]);
 
     return { rows, total };
@@ -91,8 +91,8 @@ const transactionRepository = {
       prisma.transaction.count({ where: { status: 'pending' } }),
       prisma.transaction.aggregate({
         _sum: { amount: true },
-        where: { status: 'successful' }
-      })
+        where: { status: 'successful' },
+      }),
     ]);
 
     return {
@@ -100,7 +100,7 @@ const transactionRepository = {
       successful_count: successful,
       failed_count: failed,
       pending_count: pending,
-      total_revenue: revenue._sum.amount || 0
+      total_revenue: revenue._sum.amount || 0,
     };
   },
 
@@ -111,17 +111,17 @@ const transactionRepository = {
       prisma.transaction.count({ where: { userId, status: 'failed' } }),
       prisma.transaction.aggregate({
         _sum: { amount: true },
-        where: { userId, status: 'successful' }
-      })
+        where: { userId, status: 'successful' },
+      }),
     ]);
 
     return {
       total,
       successful,
       failed,
-      total_spent: spent._sum.amount || 0
+      total_spent: spent._sum.amount || 0,
     };
-  }
+  },
 };
 
 module.exports = transactionRepository;

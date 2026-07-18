@@ -9,15 +9,15 @@ const orderRepository = {
         totalAmount,
         status: status || 'pending',
         paymentStatus: paymentStatus || 'pending',
-        notes: notes || null
-      }
+        notes: notes || null,
+      },
     });
     return order.id;
   },
 
   async addItem(orderId, movieId, itemPrice) {
     const item = await prisma.orderItem.create({
-      data: { orderId, movieId, itemPrice }
+      data: { orderId, movieId, itemPrice },
     });
     return item.id;
   },
@@ -25,14 +25,14 @@ const orderRepository = {
   async findById(id) {
     return prisma.order.findUnique({
       where: { id },
-      include: { user: true }
+      include: { user: true },
     });
   },
 
   async findByOrderNumber(orderNumber) {
     return prisma.order.findUnique({
       where: { orderNumber },
-      include: { user: true }
+      include: { user: true },
     });
   },
 
@@ -44,14 +44,14 @@ const orderRepository = {
         where,
         include: {
           items: {
-            include: { movie: true }
-          }
+            include: { movie: true },
+          },
         },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
-        take: limit
+        take: limit,
       }),
-      prisma.order.count({ where })
+      prisma.order.count({ where }),
     ]);
 
     return { rows, total };
@@ -59,11 +59,11 @@ const orderRepository = {
 
   async updateStatus(id, { status, paymentStatus, paidAt }) {
     const data = {};
-    if (status !== undefined) data.status = status;
-    if (paymentStatus !== undefined) data.paymentStatus = paymentStatus;
-    if (paidAt !== undefined) data.paidAt = paidAt;
+    if (status !== undefined) {data.status = status;}
+    if (paymentStatus !== undefined) {data.paymentStatus = paymentStatus;}
+    if (paidAt !== undefined) {data.paidAt = paidAt;}
 
-    if (Object.keys(data).length === 0) return false;
+    if (Object.keys(data).length === 0) {return false;}
     await prisma.order.update({ where: { id }, data });
     return true;
   },
@@ -71,14 +71,14 @@ const orderRepository = {
   async getItems(orderId) {
     return prisma.orderItem.findMany({
       where: { orderId },
-      include: { movie: true }
+      include: { movie: true },
     });
   },
 
   async getTotalRevenue() {
     const result = await prisma.order.aggregate({
       _sum: { totalAmount: true },
-      where: { paymentStatus: 'paid' }
+      where: { paymentStatus: 'paid' },
     });
     return result._sum.totalAmount || 0;
   },
@@ -88,8 +88,8 @@ const orderRepository = {
       _sum: { totalAmount: true },
       where: {
         paymentStatus: 'paid',
-        paidAt: { gte: startDate, lt: endDate }
-      }
+        paidAt: { gte: startDate, lt: endDate },
+      },
     });
     return result._sum.totalAmount || 0;
   },
@@ -98,14 +98,14 @@ const orderRepository = {
     return prisma.order.count({
       where: {
         paymentStatus: 'paid',
-        paidAt: { gte: startDate, lt: endDate }
-      }
+        paidAt: { gte: startDate, lt: endDate },
+      },
     });
   },
 
   async getAllForPeriod(startDate, endDate, { page = 1, limit = 50 } = {}) {
     const where = {
-      createdAt: { gte: startDate, lt: endDate }
+      createdAt: { gte: startDate, lt: endDate },
     };
 
     const [rows, total] = await Promise.all([
@@ -114,9 +114,9 @@ const orderRepository = {
         include: { user: true },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
-        take: limit
+        take: limit,
       }),
-      prisma.order.count({ where })
+      prisma.order.count({ where }),
     ]);
 
     return { rows, total };
@@ -124,7 +124,7 @@ const orderRepository = {
 
   async countAll() {
     return prisma.order.count();
-  }
+  },
 };
 
 module.exports = orderRepository;

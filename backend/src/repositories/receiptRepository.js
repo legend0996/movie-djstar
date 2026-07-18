@@ -3,7 +3,7 @@ const prisma = require('../config/database');
 const receiptRepository = {
   async create({ orderId, userId, receiptNumber, receiptData }) {
     const receipt = await prisma.receipt.create({
-      data: { orderId, userId, receiptNumber, receiptData }
+      data: { orderId, userId, receiptNumber, receiptData },
     });
     return receipt;
   },
@@ -11,7 +11,7 @@ const receiptRepository = {
   async findById(id) {
     return prisma.receipt.findUnique({
       where: { id },
-      include: { order: true }
+      include: { order: true },
     });
   },
 
@@ -24,9 +24,9 @@ const receiptRepository = {
         include: { order: { select: { orderNumber: true } } },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
-        take: limit
+        take: limit,
       }),
-      prisma.receipt.count({ where })
+      prisma.receipt.count({ where }),
     ]);
 
     return { rows, total };
@@ -35,7 +35,7 @@ const receiptRepository = {
   async findByUserAndId(id, userId) {
     return prisma.receipt.findFirst({
       where: { id, userId },
-      include: { order: { select: { orderNumber: true } } }
+      include: { order: { select: { orderNumber: true } } },
     });
   },
 };

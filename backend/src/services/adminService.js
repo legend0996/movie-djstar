@@ -29,16 +29,16 @@ const adminService = {
     const lifetimeRevenue = await orderRepository.getTotalRevenue();
 
     const [customerCount] = await db.query(
-      `SELECT COUNT(DISTINCT user_id) as count FROM user_library`
+      'SELECT COUNT(DISTINCT user_id) as count FROM user_library',
     );
 
     const [newCustomers] = await db.query(
-      `SELECT COUNT(DISTINCT user_id) as count FROM user_library WHERE created_at >= ?`,
-      [monthAgo]
+      'SELECT COUNT(DISTINCT user_id) as count FROM user_library WHERE created_at >= ?',
+      [monthAgo],
     );
 
-    const [streamStats] = await db.query(`SELECT COUNT(*) as total FROM stream_log WHERE started_at >= ?`, [monthAgo]);
-    const [downloadStats] = await db.query(`SELECT COUNT(*) as total FROM download_log WHERE created_at >= ?`, [monthAgo]);
+    const [streamStats] = await db.query('SELECT COUNT(*) as total FROM stream_log WHERE started_at >= ?', [monthAgo]);
+    const [downloadStats] = await db.query('SELECT COUNT(*) as total FROM download_log WHERE created_at >= ?', [monthAgo]);
 
     const [topSelling] = await db.query(
       `SELECT m.id, m.title, m.slug, m.poster_url, COUNT(oi.id) as total_sales, SUM(oi.item_price) as revenue
@@ -48,7 +48,7 @@ const adminService = {
        WHERE o.payment_status = 'paid'
        GROUP BY m.id
        ORDER BY total_sales DESC
-       LIMIT 10`
+       LIMIT 10`,
     );
 
     const [mostStreamed] = await db.query(
@@ -59,7 +59,7 @@ const adminService = {
        GROUP BY m.id
        ORDER BY stream_count DESC
        LIMIT 10`,
-      [monthAgo]
+      [monthAgo],
     );
 
     const [recentPurchases] = await db.query(
@@ -68,7 +68,7 @@ const adminService = {
        JOIN users u ON o.user_id = u.id
        WHERE o.payment_status = 'paid'
        ORDER BY o.created_at DESC
-       LIMIT 10`
+       LIMIT 10`,
     );
 
     const [recentActivity] = await db.query(
@@ -76,7 +76,7 @@ const adminService = {
        JOIN users u ON ual.user_id = u.id
        WHERE ual.action IN ('purchase_completed', 'login', 'registration')
        ORDER BY ual.created_at DESC
-       LIMIT 20`
+       LIMIT 20`,
     );
 
     return {
@@ -115,7 +115,7 @@ const adminService = {
       `SELECT r.name, r.slug, COUNT(u.id) as count
        FROM roles r
        LEFT JOIN users u ON u.role_id = r.id AND u.deleted_at IS NULL
-       GROUP BY r.id`
+       GROUP BY r.id`,
     );
 
     const totalMovies = await movieRepository.countAll();
@@ -125,36 +125,36 @@ const adminService = {
       `SELECT COUNT(*) as total_orders,
               SUM(CASE WHEN payment_status = 'paid' THEN 1 ELSE 0 END) as paid_orders,
               SUM(CASE WHEN payment_status = 'paid' THEN total_amount ELSE 0 END) as total_revenue
-       FROM orders`
+       FROM orders`,
     );
 
     const [commissionStats] = await db.query(
       `SELECT
         COALESCE(SUM(developer_commission), 0) as total_commission,
         COALESCE(SUM(owner_earnings), 0) as total_owner_earnings
-       FROM revenue_records`
+       FROM revenue_records`,
     );
 
     const [storageStats] = await db.query(
       `SELECT COUNT(*) as file_count, COALESCE(SUM(movie_size), 0) as total_size
-       FROM movies WHERE movie_url IS NOT NULL AND deleted_at IS NULL`
+       FROM movies WHERE movie_url IS NOT NULL AND deleted_at IS NULL`,
     );
 
-    const [streamTotal] = await db.query(`SELECT COUNT(*) as total FROM stream_log`);
-    const [downloadTotal] = await db.query(`SELECT COUNT(*) as total FROM download_log`);
+    const [streamTotal] = await db.query('SELECT COUNT(*) as total FROM stream_log');
+    const [downloadTotal] = await db.query('SELECT COUNT(*) as total FROM download_log');
 
     const [todayStats] = await db.query(
       `SELECT
         (SELECT COUNT(*) FROM users WHERE DATE(created_at) = CURDATE()) as new_users,
         (SELECT COUNT(*) FROM orders WHERE DATE(created_at) = CURDATE()) as new_orders,
-        (SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE DATE(paid_at) = CURDATE() AND payment_status = 'paid') as today_revenue`
+        (SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE DATE(paid_at) = CURDATE() AND payment_status = 'paid') as today_revenue`,
     );
 
     const [recentErrors] = await db.query(
       `SELECT * FROM user_activity_log
        WHERE action IN ('failed_login', 'payment_failed', 'account_locked')
        ORDER BY created_at DESC
-       LIMIT 20`
+       LIMIT 20`,
     );
 
     return {
@@ -196,13 +196,13 @@ const adminService = {
 
   async uploadMoviePoster(file, movieId) {
     const movie = await movieRepository.findById(movieId);
-    if (!movie) throw new NotFoundError('Movie not found');
+    if (!movie) {throw new NotFoundError('Movie not found');}
 
     const result = await r2Service.uploadFile(
       file.buffer,
       `poster-${Date.now()}-${file.originalname}`,
       file.mimetype,
-      'posters'
+      'posters',
     );
 
     const publicUrl = await r2Service.getPublicUrl(result.key);
@@ -214,13 +214,13 @@ const adminService = {
 
   async uploadMovieTrailer(file, movieId) {
     const movie = await movieRepository.findById(movieId);
-    if (!movie) throw new NotFoundError('Movie not found');
+    if (!movie) {throw new NotFoundError('Movie not found');}
 
     const result = await r2Service.uploadFile(
       file.buffer,
       `trailer-${Date.now()}-${file.originalname}`,
       file.mimetype,
-      'trailers'
+      'trailers',
     );
 
     const publicUrl = await r2Service.getPublicUrl(result.key);
@@ -232,13 +232,13 @@ const adminService = {
 
   async uploadMovieFile(file, movieId) {
     const movie = await movieRepository.findById(movieId);
-    if (!movie) throw new NotFoundError('Movie not found');
+    if (!movie) {throw new NotFoundError('Movie not found');}
 
     const result = await r2Service.uploadFile(
       file.buffer,
       `movie-${Date.now()}-${file.originalname}`,
       file.mimetype || 'video/mp4',
-      'movies'
+      'movies',
     );
 
     await movieRepository.update(movieId, {
@@ -268,12 +268,12 @@ const adminService = {
        ${where}
        ORDER BY al.created_at DESC
        LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
+      [...params, limit, offset],
     );
 
     const [countResult] = await db.query(
       `SELECT COUNT(*) as total FROM audit_logs al ${where}`,
-      params
+      params,
     );
 
     return { rows, total: countResult[0].total };
@@ -285,7 +285,7 @@ const adminService = {
 
   async updateUserStatus(userId, status) {
     const user = await userRepository.findById(userId);
-    if (!user) throw new NotFoundError('User not found');
+    if (!user) {throw new NotFoundError('User not found');}
 
     const validStatuses = [USER_STATUS.ACTIVE, USER_STATUS.UNVERIFIED, USER_STATUS.SUSPENDED, USER_STATUS.DISABLED];
     if (!validStatuses.includes(status)) {
@@ -298,7 +298,7 @@ const adminService = {
       await db.execute(
         `UPDATE user_sessions SET is_active = 0, revoked_at = NOW()
          WHERE user_id = ? AND is_active = 1`,
-        [userId]
+        [userId],
       );
     }
 
@@ -326,12 +326,12 @@ const adminService = {
            WHEN 'low' THEN 3
          END, st.created_at DESC
        LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
+      [...params, limit, offset],
     );
 
     const [countResult] = await db.query(
       `SELECT COUNT(*) as total FROM support_tickets st ${where}`,
-      params
+      params,
     );
 
     return { rows, total: countResult[0].total };
@@ -346,7 +346,7 @@ const adminService = {
        FROM users WHERE created_at >= ? AND created_at <= ? AND deleted_at IS NULL
        GROUP BY DATE(created_at)
        ORDER BY date`,
-      [start, end]
+      [start, end],
     );
 
     const [revenueTrend] = await db.query(
@@ -355,7 +355,7 @@ const adminService = {
        WHERE payment_status = 'paid' AND paid_at >= ? AND paid_at <= ?
        GROUP BY DATE(paid_at)
        ORDER BY date`,
-      [start, end]
+      [start, end],
     );
 
     const [moviesByCategory] = await db.query(
@@ -363,7 +363,7 @@ const adminService = {
        FROM categories c
        LEFT JOIN movies m ON m.category_id = c.id AND m.status = 'published' AND m.deleted_at IS NULL
        GROUP BY c.id
-       ORDER BY count DESC`
+       ORDER BY count DESC`,
     );
 
     const [purchaseTrend] = await db.query(
@@ -372,7 +372,7 @@ const adminService = {
        WHERE o.payment_status = 'paid' AND o.paid_at >= ? AND o.paid_at <= ?
        GROUP BY DATE(o.paid_at)
        ORDER BY date`,
-      [start, end]
+      [start, end],
     );
 
     return {
@@ -394,7 +394,7 @@ const adminService = {
        WHERE payment_status = 'paid' AND paid_at >= ? AND paid_at <= ?
        GROUP BY DATE(paid_at)
        ORDER BY date`,
-      [start, end]
+      [start, end],
     );
 
     const [summary] = await db.query(
@@ -404,7 +404,7 @@ const adminService = {
          COALESCE(AVG(total_amount), 0) as avg_order_value
        FROM orders
        WHERE payment_status = 'paid' AND paid_at >= ? AND paid_at <= ?`,
-      [start, end]
+      [start, end],
     );
 
     const [topMovies] = await db.query(
@@ -416,7 +416,7 @@ const adminService = {
        GROUP BY m.id
        ORDER BY revenue DESC
        LIMIT 20`,
-      [start, end]
+      [start, end],
     );
 
     return { daily, summary: summary[0], topMovies, period: { start, end } };

@@ -61,7 +61,7 @@ describe('authenticate', () => {
     const expiredToken = jwt.sign(
       { sub: 1, username: 'testuser', role: 'user' },
       config.jwt.secret,
-      { expiresIn: '0s', issuer: config.jwt.issuer }
+      { expiresIn: '0s', issuer: config.jwt.issuer },
     );
 
     const req = mockReq({ authorization: `Bearer ${expiredToken}` });

@@ -8,8 +8,8 @@ const notificationRepository = {
         type,
         title,
         message,
-        data: data || undefined
-      }
+        data: data || undefined,
+      },
     });
     return notification.id;
   },
@@ -21,8 +21,8 @@ const notificationRepository = {
         type,
         title,
         message,
-        data: data || undefined
-      }
+        data: data || undefined,
+      },
     });
     return notification.id;
   },
@@ -38,9 +38,9 @@ const notificationRepository = {
         where,
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
-        take: limit
+        take: limit,
       }),
-      prisma.notification.count({ where })
+      prisma.notification.count({ where }),
     ]);
 
     return { rows, total };
@@ -49,7 +49,7 @@ const notificationRepository = {
   async markAsRead(notificationId, userId) {
     await prisma.notification.updateMany({
       where: { id: notificationId, userId },
-      data: { isRead: true, readAt: new Date() }
+      data: { isRead: true, readAt: new Date() },
     });
     return true;
   },
@@ -57,16 +57,16 @@ const notificationRepository = {
   async markAllAsRead(userId) {
     await prisma.notification.updateMany({
       where: { userId, isRead: false },
-      data: { isRead: true, readAt: new Date() }
+      data: { isRead: true, readAt: new Date() },
     });
     return true;
   },
 
   async getUnreadCount(userId) {
     return prisma.notification.count({
-      where: { userId, isRead: false }
+      where: { userId, isRead: false },
     });
-  }
+  },
 };
 
 module.exports = notificationRepository;

@@ -5,21 +5,21 @@ const libraryRepository = {
     await prisma.userLibrary.upsert({
       where: { userId_movieId: { userId, movieId } },
       update: { isAvailable: true, orderId },
-      create: { userId, movieId, orderId, purchasePrice }
+      create: { userId, movieId, orderId, purchasePrice },
     });
   },
 
   async removeFromLibrary(userId, movieId) {
     await prisma.userLibrary.updateMany({
       where: { userId, movieId },
-      data: { isAvailable: false }
+      data: { isAvailable: false },
     });
     return true;
   },
 
   async isOwned(userId, movieId) {
     const entry = await prisma.userLibrary.findFirst({
-      where: { userId, movieId, isAvailable: true }
+      where: { userId, movieId, isAvailable: true },
     });
     return entry !== null;
   },
@@ -32,23 +32,23 @@ const libraryRepository = {
         where,
         include: {
           movie: {
-            include: { category: true }
-          }
+            include: { category: true },
+          },
         },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
-        take: limit
+        take: limit,
       }),
-      prisma.userLibrary.count({ where })
+      prisma.userLibrary.count({ where }),
     ]);
 
     const enrichedRows = await Promise.all(rows.map(async (entry) => {
       const progress = await prisma.playbackProgress.findFirst({
-        where: { userId, movieId: entry.movieId }
+        where: { userId, movieId: entry.movieId },
       });
       return {
         ...entry,
-        playback_progress: progress
+        playback_progress: progress,
       };
     }));
 
@@ -57,7 +57,7 @@ const libraryRepository = {
 
   async getLibraryCount(userId) {
     return prisma.userLibrary.count({
-      where: { userId, isAvailable: true }
+      where: { userId, isAvailable: true },
     });
   },
 
@@ -68,7 +68,7 @@ const libraryRepository = {
         positionSeconds,
         durationSeconds,
         completed,
-        lastWatchedAt: new Date()
+        lastWatchedAt: new Date(),
       },
       create: {
         userId,
@@ -76,14 +76,14 @@ const libraryRepository = {
         positionSeconds,
         durationSeconds,
         completed,
-        lastWatchedAt: new Date()
-      }
+        lastWatchedAt: new Date(),
+      },
     });
   },
 
   async getPlaybackProgress(userId, movieId) {
     return prisma.playbackProgress.findUnique({
-      where: { userId_movieId: { userId, movieId } }
+      where: { userId_movieId: { userId, movieId } },
     });
   },
 
@@ -93,29 +93,29 @@ const libraryRepository = {
         userId,
         completed: false,
         movie: {
-          deletedAt: null
-        }
+          deletedAt: null,
+        },
       },
       include: {
         movie: {
-          include: { category: true }
-        }
+          include: { category: true },
+        },
       },
       orderBy: { lastWatchedAt: 'desc' },
-      take: limit
+      take: limit,
     });
   },
 
   async logDownload(userId, movieId, ipAddress, userAgent) {
     const log = await prisma.downloadLog.create({
-      data: { userId, movieId, ipAddress, userAgent }
+      data: { userId, movieId, ipAddress, userAgent },
     });
     return log.id;
   },
 
   async logStream(userId, movieId, ipAddress, userAgent) {
     const log = await prisma.streamLog.create({
-      data: { userId, movieId, ipAddress, userAgent }
+      data: { userId, movieId, ipAddress, userAgent },
     });
     return log.id;
   },
@@ -129,9 +129,9 @@ const libraryRepository = {
         include: { movie: true },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
-        take: limit
+        take: limit,
       }),
-      prisma.downloadLog.count({ where })
+      prisma.downloadLog.count({ where }),
     ]);
 
     return { rows, total };
@@ -146,13 +146,13 @@ const libraryRepository = {
         include: { movie: true },
         orderBy: { startedAt: 'desc' },
         skip: (page - 1) * limit,
-        take: limit
+        take: limit,
       }),
-      prisma.streamLog.count({ where })
+      prisma.streamLog.count({ where }),
     ]);
 
     return { rows, total };
-  }
+  },
 };
 
 module.exports = libraryRepository;

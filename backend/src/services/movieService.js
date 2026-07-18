@@ -29,7 +29,7 @@ const movieService = {
 
   async update(movieId, data, userId) {
     const movie = await movieRepository.findById(movieId);
-    if (!movie) throw new NotFoundError('Movie not found');
+    if (!movie) {throw new NotFoundError('Movie not found');}
 
     if (movie.created_by && movie.created_by !== userId) {
       const user = await require('../repositories/userRepository').findById(userId);
@@ -53,7 +53,7 @@ const movieService = {
 
   async delete(movieId, userId) {
     const movie = await movieRepository.findById(movieId);
-    if (!movie) throw new NotFoundError('Movie not found');
+    if (!movie) {throw new NotFoundError('Movie not found');}
 
     await movieRepository.delete(movieId);
     await logActivity(userId, 'movie_deleted', 'movie', movieId, { title: movie.title });
@@ -61,7 +61,7 @@ const movieService = {
 
   async getMovie(movieId, userId, userRole) {
     const movie = await movieRepository.findById(movieId);
-    if (!movie) throw new NotFoundError('Movie not found');
+    if (!movie) {throw new NotFoundError('Movie not found');}
 
     const isOwnerOrDev = userRole === ROLES.DEVELOPER || userRole === ROLES.MOVIE_OWNER;
     if (movie.status !== MOVIE_STATUS.PUBLISHED && !isOwnerOrDev) {
@@ -74,7 +74,7 @@ const movieService = {
 
   async getMovieBySlug(slug, userId, userRole) {
     const movie = await movieRepository.findBySlug(slug);
-    if (!movie) throw new NotFoundError('Movie not found');
+    if (!movie) {throw new NotFoundError('Movie not found');}
 
     const isOwnerOrDev = userRole === ROLES.DEVELOPER || userRole === ROLES.MOVIE_OWNER;
     if (movie.status !== MOVIE_STATUS.PUBLISHED && !isOwnerOrDev) {
@@ -89,8 +89,8 @@ const movieService = {
     const { page: p, limit: l, offset } = paginate(page, limit);
 
     const options = { page: p, limit: l, search, sort: sort || 'newest' };
-    if (category) options.categoryId = parseInt(category);
-    if (featured) options.featured = true;
+    if (category) {options.categoryId = parseInt(category);}
+    if (featured) {options.featured = true;}
 
     const isPrivileged = userRole === ROLES.DEVELOPER || userRole === ROLES.MOVIE_OWNER;
     if (!isPrivileged) {
@@ -135,7 +135,7 @@ const movieService = {
 
   async createCategory(data) {
     const existing = await categoryRepository.findBySlug(slugify(data.name));
-    if (existing) throw new ValidationError('Category already exists');
+    if (existing) {throw new ValidationError('Category already exists');}
 
     const id = await categoryRepository.create(data);
     return categoryRepository.findById(id);
@@ -143,7 +143,7 @@ const movieService = {
 
   async updateCategory(categoryId, data) {
     const category = await categoryRepository.findById(categoryId);
-    if (!category) throw new NotFoundError('Category not found');
+    if (!category) {throw new NotFoundError('Category not found');}
 
     await categoryRepository.update(categoryId, data);
     return categoryRepository.findById(categoryId);
@@ -151,13 +151,13 @@ const movieService = {
 
   async deleteCategory(categoryId) {
     const category = await categoryRepository.findById(categoryId);
-    if (!category) throw new NotFoundError('Category not found');
+    if (!category) {throw new NotFoundError('Category not found');}
 
     await categoryRepository.delete(categoryId);
   },
 
   async reorderCategories(orders) {
-    if (!Array.isArray(orders)) throw new ValidationError('Orders must be an array');
+    if (!Array.isArray(orders)) {throw new ValidationError('Orders must be an array');}
     for (const { id, order } of orders) {
       await categoryRepository.reorder(id, order);
     }
@@ -174,7 +174,7 @@ const movieService = {
 
   async savePlaybackProgress(userId, movieId, positionSeconds, durationSeconds, completed) {
     const owned = await libraryRepository.isOwned(userId, movieId);
-    if (!owned) throw new NotFoundError('Movie not found in your library');
+    if (!owned) {throw new NotFoundError('Movie not found in your library');}
 
     await libraryRepository.savePlaybackProgress(userId, movieId, positionSeconds, durationSeconds, completed);
   },
@@ -191,13 +191,13 @@ const movieService = {
 
   async uploadPoster(file, movieId) {
     const movie = await movieRepository.findById(movieId);
-    if (!movie) throw new NotFoundError('Movie not found');
+    if (!movie) {throw new NotFoundError('Movie not found');}
 
     const result = await r2Service.uploadFile(
       file.buffer,
       `poster-${Date.now()}-${file.originalname}`,
       file.mimetype,
-      'posters'
+      'posters',
     );
 
     const publicUrl = await r2Service.getPublicUrl(result.key);
@@ -209,13 +209,13 @@ const movieService = {
 
   async uploadTrailer(file, movieId) {
     const movie = await movieRepository.findById(movieId);
-    if (!movie) throw new NotFoundError('Movie not found');
+    if (!movie) {throw new NotFoundError('Movie not found');}
 
     const result = await r2Service.uploadFile(
       file.buffer,
       `trailer-${Date.now()}-${file.originalname}`,
       file.mimetype,
-      'trailers'
+      'trailers',
     );
 
     const publicUrl = await r2Service.getPublicUrl(result.key);
@@ -227,13 +227,13 @@ const movieService = {
 
   async uploadMovieFile(file, movieId) {
     const movie = await movieRepository.findById(movieId);
-    if (!movie) throw new NotFoundError('Movie not found');
+    if (!movie) {throw new NotFoundError('Movie not found');}
 
     const result = await r2Service.uploadFile(
       file.buffer,
       `movie-${Date.now()}-${file.originalname}`,
       file.mimetype || 'video/mp4',
-      'movies'
+      'movies',
     );
 
     await movieRepository.update(movieId, {
@@ -247,7 +247,7 @@ const movieService = {
 };
 
 async function enrichWithLibraryStatus(movie, userId) {
-  if (!userId) return { ...movie, inLibrary: false, hasPurchased: false };
+  if (!userId) {return { ...movie, inLibrary: false, hasPurchased: false };}
   try {
     const owned = await libraryRepository.isOwned(userId, movie.id);
     return { ...movie, inLibrary: owned, hasPurchased: owned };

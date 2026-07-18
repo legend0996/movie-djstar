@@ -1,25 +1,23 @@
+jest.mock('../../services/emailService');
+
 const request = require('supertest');
 const app = require('../../app');
 const userRepository = require('../../repositories/userRepository');
+const supportRepository = require('../../repositories/supportRepository');
 const { createMockUser, createMockToken } = require('../helpers/testFactory');
-
-jest.mock('../../services/emailService');
 
 describe('Support Integration', () => {
   const user = createMockUser();
   const token = createMockToken(user);
-  const db = require('../../config/database');
 
   beforeEach(() => {
     jest.clearAllMocks();
+    userRepository.findById.mockResolvedValue(user);
   });
 
   describe('POST /api/support', () => {
     it('returns 201 creates ticket', async () => {
-      userRepository.findById.mockResolvedValue(user);
-      db.execute
-        .mockResolvedValueOnce([{ insertId: 1 }])
-        .mockResolvedValueOnce([[]]);
+      supportRepository.createTicket.mockResolvedValue(1);
 
       const res = await request(app)
         .post('/api/support')
@@ -33,9 +31,10 @@ describe('Support Integration', () => {
 
   describe('GET /api/support', () => {
     it('returns 200 with users tickets', async () => {
-      db.execute
-        .mockResolvedValueOnce([[{ id: 1, subject: 'Test', status: 'open' }]])
-        .mockResolvedValueOnce([[{ total: 1 }]]);
+      supportRepository.getUserTickets.mockResolvedValue({
+        rows: [{ id: 1, subject: 'Test', status: 'open' }],
+        total: 1,
+      });
 
       const res = await request(app)
         .get('/api/support')
@@ -49,12 +48,11 @@ describe('Support Integration', () => {
 
   describe('GET /api/support/:id', () => {
     it('returns 200 with ticket + replies', async () => {
-      db.execute
-        .mockResolvedValueOnce([[{
-          id: 1, subject: 'Test', message: 'Body', status: 'open',
-          username: 'testuser', email: 'test@example.com',
-        }]])
-        .mockResolvedValueOnce([[{ id: 1, message: 'Reply', username: 'admin' }]]);
+      supportRepository.getTicketWithReplies.mockResolvedValue({
+        id: 1, subject: 'Test', message: 'Body', status: 'open',
+        user: { username: 'testuser', email: 'test@example.com' },
+        replies: [{ id: 1, message: 'Reply', user: { username: 'admin' } }],
+      });
 
       const res = await request(app)
         .get('/api/support/1')
@@ -67,10 +65,8 @@ describe('Support Integration', () => {
 
   describe('POST /api/support/:id/reply', () => {
     it('returns 200', async () => {
-      db.execute
-        .mockResolvedValueOnce([[{ id: 1, subject: 'Test', status: 'open' }]])
-        .mockResolvedValueOnce([{ insertId: 5 }])
-        .mockResolvedValueOnce([[]]);
+      supportRepository.findTicketById.mockResolvedValue({ id: 1, subject: 'Test', status: 'open' });
+      supportRepository.addReply.mockResolvedValue(5);
 
       const res = await request(app)
         .post('/api/support/1/reply')

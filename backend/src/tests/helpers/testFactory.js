@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const config = require('../../config');
 
 function createMockUser(overrides = {}) {
-  return {
+  const base = {
     id: 1,
     username: 'testuser',
     email: 'test@example.com',
@@ -24,6 +24,10 @@ function createMockUser(overrides = {}) {
     created_at: new Date('2024-01-01'),
     ...overrides,
   };
+  if (!base.role) {
+    base.role = { id: base.role_id, slug: base.role_slug, name: base.role_name };
+  }
+  return base;
 }
 
 function createMockMovie(overrides = {}) {

@@ -73,19 +73,19 @@ function getIO() {
 }
 
 function sendToUser(userId, event, data) {
-  if (!io) return false;
+  if (!io) {return false;}
   io.to(`user:${userId}`).emit(event, data);
   return true;
 }
 
 function sendToStaff(event, data) {
-  if (!io) return false;
+  if (!io) {return false;}
   io.to('staff').emit(event, data);
   return true;
 }
 
 function broadcast(event, data) {
-  if (!io) return false;
+  if (!io) {return false;}
   io.emit(event, data);
   return true;
 }

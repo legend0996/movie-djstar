@@ -1,10 +1,11 @@
-const request = require('supertest');
-const app = require('../../app');
-const userRepository = require('../../repositories/userRepository');
-const emailService = require('../../services/emailService');
-const { createMockUser, createMockToken, createMockRefreshToken } = require('../helpers/testFactory');
-
-jest.mock('../../services/emailService');
+jest.mock('../../services/emailService', () => ({
+  sendVerificationCode: jest.fn().mockResolvedValue(),
+  sendWelcomeEmail: jest.fn().mockResolvedValue(),
+  sendPasswordResetCode: jest.fn().mockResolvedValue(),
+  sendPasswordChangeConfirmation: jest.fn().mockResolvedValue(),
+  sendPurchaseReceipt: jest.fn().mockResolvedValue(),
+  sendTicketCreated: jest.fn().mockResolvedValue(),
+}));
 jest.mock('bcryptjs', () => ({
   hash: jest.fn().mockResolvedValue('hashed_password'),
   compare: jest.fn(),
@@ -17,12 +18,21 @@ jest.mock('jsonwebtoken', () => {
   };
 });
 
+const request = require('supertest');
+const app = require('../../app');
+const userRepository = require('../../repositories/userRepository');
+const roleRepository = require('../../repositories/roleRepository');
+const emailService = require('../../services/emailService');
+const { createMockUser, createMockToken, createMockRefreshToken } = require('../helpers/testFactory');
+
 describe('Auth Integration', () => {
   const db = require('../../config/database');
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
+
+
 
   describe('POST /api/auth/register', () => {
     const validBody = {
@@ -38,7 +48,7 @@ describe('Auth Integration', () => {
       userRepository.findByUsername.mockResolvedValue(null);
       userRepository.findByEmail.mockResolvedValue(null);
       userRepository.create.mockResolvedValue(99);
-      db.execute.mockResolvedValue([[{ id: 1, slug: 'user' }]]);
+      roleRepository.findBySlug.mockResolvedValue({ id: 1, slug: 'user', name: 'User' });
 
       const res = await request(app)
         .post('/api/auth/register')
@@ -51,6 +61,7 @@ describe('Auth Integration', () => {
 
     it('returns 409 on duplicate username', async () => {
       userRepository.findByUsername.mockResolvedValue(createMockUser());
+      roleRepository.findBySlug.mockResolvedValue({ id: 1, slug: 'user', name: 'User' });
 
       const res = await request(app)
         .post('/api/auth/register')
@@ -84,7 +95,6 @@ describe('Auth Integration', () => {
       userRepository.update.mockResolvedValue(true);
       db.execute.mockResolvedValue([[]]);
       bcrypt.compare.mockResolvedValue(true);
-
       const res = await request(app)
         .post('/api/auth/login/step2')
         .send({ username: 'testuser', password: 'Str0ng!Pass' })
@@ -99,7 +109,7 @@ describe('Auth Integration', () => {
       const user = createMockUser({ email_verified_at: null });
       userRepository.findByEmail.mockResolvedValue(user);
       userRepository.update.mockResolvedValue(true);
-      db.execute.mockResolvedValue([[{ id: 1, attempts: 0, max_attempts: 5 }]]);
+      db.query.mockResolvedValue([[{ id: 1, attempts: 0, max_attempts: 5 }]]);
 
       const res = await request(app)
         .post('/api/auth/verify-email')
@@ -116,11 +126,12 @@ describe('Auth Integration', () => {
     it('returns 200 with new tokens', async () => {
       jwt.verify = jest.fn().mockReturnValue({ sub: 1, type: 'refresh' });
       userRepository.findById.mockResolvedValue(createMockUser());
-      db.execute.mockResolvedValueOnce([[{ id: 1 }]]);
+      db.query.mockResolvedValueOnce([[{ id: 1, refresh_token: 'test' }]]);
+      db.execute.mockResolvedValueOnce([[]]);
 
       const res = await request(app)
         .post('/api/auth/refresh-token')
-        .send({ refreshToken: 'valid-refresh-token' })
+        .send({ refreshToken: 'eyJhbGciOiJIUzI1NiJ9.dGVzdA.test' })
         .expect(200);
 
       expect(res.body.data.accessToken).toBeDefined();

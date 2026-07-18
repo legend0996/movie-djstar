@@ -12,7 +12,7 @@ function startScheduledJobs() {
     try {
       const [expiredCodes] = await db.execute(
         `UPDATE verification_codes SET used_at = NOW()
-         WHERE used_at IS NULL AND expires_at < NOW()`
+         WHERE used_at IS NULL AND expires_at < NOW()`,
       );
       if (expiredCodes.affectedRows > 0) {
         logger.info('Expired verification codes cleaned', { count: expiredCodes.affectedRows });
@@ -24,7 +24,7 @@ function startScheduledJobs() {
     try {
       const [expiredSessions] = await db.execute(
         `UPDATE user_sessions SET is_active = 0, revoked_at = NOW()
-         WHERE is_active = 1 AND expires_at < NOW()`
+         WHERE is_active = 1 AND expires_at < NOW()`,
       );
       if (expiredSessions.affectedRows > 0) {
         logger.info('Expired sessions cleaned', { count: expiredSessions.affectedRows });
@@ -36,7 +36,7 @@ function startScheduledJobs() {
     try {
       const [expiredTransactions] = await db.execute(
         `UPDATE transactions SET status = 'cancelled', updated_at = NOW()
-         WHERE status = 'processing' AND created_at < DATE_SUB(NOW(), INTERVAL 30 MINUTE)`
+         WHERE status = 'processing' AND created_at < DATE_SUB(NOW(), INTERVAL 30 MINUTE)`,
       );
       if (expiredTransactions.affectedRows > 0) {
         logger.info('Expired payment transactions cancelled', { count: expiredTransactions.affectedRows });

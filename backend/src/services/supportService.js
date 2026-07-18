@@ -66,8 +66,8 @@ const supportService = {
     }
 
     const updates = { status };
-    if (status === TICKET_STATUS.RESOLVED) updates.resolvedAt = new Date();
-    if (status === TICKET_STATUS.CLOSED) updates.closedAt = new Date();
+    if (status === TICKET_STATUS.RESOLVED) {updates.resolvedAt = new Date();}
+    if (status === TICKET_STATUS.CLOSED) {updates.closedAt = new Date();}
 
     await supportRepository.updateTicketStatus(ticketId, updates);
     await logActivity(userId, 'support_status_change', 'support_ticket', ticketId, { newStatus: status });

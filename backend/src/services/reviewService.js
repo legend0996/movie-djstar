@@ -30,7 +30,7 @@ const reviewService = {
 
   async update(userId, reviewId, rating, comment) {
     const review = await reviewRepository.findById(reviewId);
-    if (!review) throw new NotFoundError('Review not found');
+    if (!review) {throw new NotFoundError('Review not found');}
     if (review.user.id !== userId) {
       throw new ValidationError('You can only edit your own reviews');
     }
@@ -47,7 +47,7 @@ const reviewService = {
 
   async delete(userId, reviewId) {
     const review = await reviewRepository.findById(reviewId);
-    if (!review) throw new NotFoundError('Review not found');
+    if (!review) {throw new NotFoundError('Review not found');}
     if (review.user.id !== userId) {
       throw new ValidationError('You can only delete your own reviews');
     }
@@ -58,7 +58,7 @@ const reviewService = {
 
   async getMovieReviews(movieId, { page, limit } = {}) {
     const movie = await movieRepository.findById(movieId);
-    if (!movie) throw new NotFoundError('Movie not found');
+    if (!movie) {throw new NotFoundError('Movie not found');}
 
     return reviewRepository.findByMovie(movieId, { page, limit });
   },
@@ -68,7 +68,7 @@ const reviewService = {
   },
 
   async attachReviewStats(movies) {
-    if (!movies || movies.length === 0) return movies;
+    if (!movies || movies.length === 0) {return movies;}
     const movieIds = movies.map(m => m.id);
     const statsMap = await reviewRepository.getMoviesStats(movieIds);
     return movies.map(m => ({
@@ -79,7 +79,7 @@ const reviewService = {
   },
 
   async attachSingleMovieStats(movie) {
-    if (!movie) return movie;
+    if (!movie) {return movie;}
     const stats = await reviewRepository.getMovieStats(movie.id);
     return {
       ...movie,
