@@ -66,7 +66,11 @@ const authService = {
 
     await logActivity(userId, 'registration', 'user', userId, { username, email });
 
-    return { userId };
+    const result = { userId };
+    if (config.isDev) {
+      result.verificationCode = verificationCode;
+    }
+    return result;
   },
 
   async loginStep1(identifier) {
