@@ -34,6 +34,7 @@ export default function RegisterPage() {
         username: form.username,
         email: form.email,
         password: form.password,
+        confirmPassword: form.password,
       });
       if (data.data.user) login(data.data);
       navigate('/verify-email');
