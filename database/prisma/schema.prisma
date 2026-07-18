@@ -1,0 +1,770 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextIndex"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoleSlug {
+  user
+  movie_owner
+  developer
+}
+
+enum UserStatus {
+  active
+  unverified
+  suspended
+  disabled
+  deleted
+}
+
+enum MovieStatus {
+  draft
+  published
+  hidden
+  archived
+  unavailable
+}
+
+enum OrderStatus {
+  pending
+  processing
+  completed
+  failed
+  refunded
+  partially_refunded
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  failed
+  refunded
+}
+
+enum TransactionStatus {
+  pending
+  processing
+  successful
+  failed
+  cancelled
+  expired
+  reversed
+}
+
+enum TicketPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum TicketStatus {
+  open
+  in_progress
+  waiting_on_customer
+  resolved
+  closed
+}
+
+enum VerificationType {
+  email_verification
+  password_reset
+  email_change
+  phone_verification
+}
+
+// ============================================================================
+// 1. ROLES
+// ============================================================================
+model Role {
+  id          Int       @id @default(autoincrement()) @db.UnsignedInt
+  name        String    @unique @db.VarChar(50)
+  slug        RoleSlug  @unique
+  description String?   @db.VarChar(255)
+  isSystem    Boolean   @default(false) @map("is_system")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  users       User[]
+
+  @@index([slug], name: "idx_roles_slug")
+  @@map("roles")
+}
+
+// ============================================================================
+// 2. USERS
+// ============================================================================
+model User {
+  id                Int        @id @default(autoincrement()) @db.UnsignedInt
+  roleId            Int        @map("role_id") @db.UnsignedInt
+  username          String     @unique @db.VarChar(50)
+  email             String     @unique @db.VarChar(255)
+  phone             String?    @unique @db.VarChar(20)
+  passwordHash      String     @map("password_hash") @db.VarChar(255)
+  firstName         String?    @map("first_name") @db.VarChar(100)
+  lastName          String?    @map("last_name") @db.VarChar(100)
+  avatarUrl         String?    @map("avatar_url") @db.VarChar(500)
+  status            UserStatus @default(unverified)
+  emailVerifiedAt   DateTime?  @map("email_verified_at")
+  phoneVerifiedAt   DateTime?  @map("phone_verified_at")
+  lastLoginAt       DateTime?  @map("last_login_at")
+  lastLoginIp       String?    @map("last_login_ip") @db.VarChar(45)
+  loginAttempts     Int        @default(0) @map("login_attempts") @db.UnsignedInt
+  lockedUntil       DateTime?  @map("locked_until")
+  passwordChangedAt DateTime?  @map("password_changed_at")
+  twoFactorEnabled  Boolean    @default(false) @map("two_factor_enabled")
+  twoFactorSecret   String?    @map("two_factor_secret") @db.VarChar(255)
+  metadata          Json?
+  createdAt         DateTime   @default(now()) @map("created_at")
+  updatedAt         DateTime   @updatedAt @map("updated_at")
+  deletedAt         DateTime?  @map("deleted_at")
+
+  role              Role              @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  verificationCodes VerificationCode[]
+  userSessions      UserSession[]
+  activityLogs      UserActivityLog[]
+  auditLogs         AuditLog[]
+  moviesCreated     Movie[]           @relation("MovieCreator")
+  orders            Order[]
+  transactions      Transaction[]
+  library           UserLibrary[]
+  playbackProgress  PlaybackProgress[]
+  downloadLogs      DownloadLog[]
+  streamLogs        StreamLog[]
+  receipts          Receipt[]
+  supportTickets    SupportTicket[]    @relation("TicketOwner")
+  supportReplies    SupportTicketReply[]
+  notifications     Notification[]
+  ticketAssignments SupportTicket[]    @relation("TicketAssignee")
+  reviews           Review[]
+
+  @@index([email], name: "idx_users_email")
+  @@index([username], name: "idx_users_username")
+  @@index([status], name: "idx_users_status")
+  @@index([roleId], name: "idx_users_role")
+  @@index([createdAt], name: "idx_users_created")
+  @@map("users")
+}
+
+// ============================================================================
+// 3. VERIFICATION CODES
+// ============================================================================
+model VerificationCode {
+  id          Int              @id @default(autoincrement()) @db.UnsignedInt
+  userId      Int              @map("user_id") @db.UnsignedInt
+  code        String           @db.VarChar(6)
+  type        VerificationType
+  purpose     String?          @db.VarChar(100)
+  expiresAt   DateTime         @map("expires_at")
+  usedAt      DateTime?        @map("used_at")
+  attempts    Int              @default(0) @db.UnsignedInt
+  maxAttempts Int              @default(5) @map("max_attempts") @db.UnsignedInt
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], name: "idx_vc_user")
+  @@index([code], name: "idx_vc_code")
+  @@index([type], name: "idx_vc_type")
+  @@index([expiresAt], name: "idx_vc_expires")
+  @@index([usedAt], name: "idx_vc_used")
+  @@map("verification_codes")
+}
+
+// ============================================================================
+// 4. USER SESSIONS
+// ============================================================================
+model UserSession {
+  id             Int       @id @default(autoincrement()) @db.UnsignedInt
+  userId         Int       @map("user_id") @db.UnsignedInt
+  token          String    @db.VarChar(500)
+  refreshToken   String?   @map("refresh_token") @db.VarChar(500)
+  ipAddress      String?   @map("ip_address") @db.VarChar(45)
+  userAgent      String?   @map("user_agent") @db.VarChar(500)
+  deviceType     String?   @map("device_type") @db.VarChar(50)
+  deviceName     String?   @map("device_name") @db.VarChar(255)
+  isActive       Boolean   @default(true) @map("is_active")
+  lastActivityAt DateTime? @map("last_activity_at")
+  expiresAt      DateTime  @map("expires_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  revokedAt      DateTime? @map("revoked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], name: "idx_us_user")
+  @@index([token], name: "idx_us_token")
+  @@index([isActive], name: "idx_us_active")
+  @@index([expiresAt], name: "idx_us_expires")
+  @@map("user_sessions")
+}
+
+// ============================================================================
+// 5. USER ACTIVITY LOG
+// ============================================================================
+model UserActivityLog {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  userId     Int?      @map("user_id") @db.UnsignedInt
+  action     String    @db.VarChar(100)
+  entityType String?   @map("entity_type") @db.VarChar(100)
+  entityId   Int?      @map("entity_id") @db.UnsignedInt
+  ipAddress  String?   @map("ip_address") @db.VarChar(45)
+  userAgent  String?   @map("user_agent") @db.VarChar(500)
+  details    Json?
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId], name: "idx_ual_user")
+  @@index([action], name: "idx_ual_action")
+  @@index([entityType, entityId], name: "idx_ual_entity")
+  @@index([createdAt], name: "idx_ual_created")
+  @@map("user_activity_log")
+}
+
+// ============================================================================
+// 6. CATEGORIES
+// ============================================================================
+model Category {
+  id           Int      @id @default(autoincrement()) @db.UnsignedInt
+  name         String   @unique @db.VarChar(100)
+  slug         String   @unique @db.VarChar(100)
+  description  String?  @db.Text
+  parentId     Int?     @map("parent_id") @db.UnsignedInt
+  icon         String?  @db.VarChar(255)
+  displayOrder Int      @default(0) @map("display_order")
+  isVisible    Boolean  @default(true) @map("is_visible")
+  isSeries     Boolean  @default(false) @map("is_series")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  parent   Category? @relation("CategoryParent", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryParent")
+  movies   Movie[]
+
+  @@index([slug], name: "idx_cat_slug")
+  @@index([parentId], name: "idx_cat_parent")
+  @@index([isVisible], name: "idx_cat_visible")
+  @@index([displayOrder], name: "idx_cat_order")
+  @@map("categories")
+}
+
+// ============================================================================
+// 7. MOVIES
+// ============================================================================
+model Movie {
+  id               Int         @id @default(autoincrement()) @db.UnsignedInt
+  categoryId       Int?        @map("category_id") @db.UnsignedInt
+  title            String      @db.VarChar(255)
+  slug             String      @unique @db.VarChar(255)
+  description      String?     @db.Text
+  shortDescription String?     @map("short_description") @db.VarChar(500)
+  duration         Int?        @db.UnsignedInt
+  releaseYear      Int?        @map("release_year")
+  language         String?     @default("English") @db.VarChar(50)
+  quality          String?     @default("HD") @db.VarChar(20)
+  ageRating        String?     @map("age_rating") @db.VarChar(10)
+  director         String?     @db.VarChar(255)
+  castMembers      Json?       @map("cast_members")
+  posterUrl        String?     @map("poster_url") @db.VarChar(500)
+  coverUrl         String?     @map("cover_url") @db.VarChar(500)
+  trailerUrl       String?     @map("trailer_url") @db.VarChar(500)
+  thumbnailUrl     String?     @map("thumbnail_url") @db.VarChar(500)
+  movieUrl         String?     @map("movie_url") @db.VarChar(500)
+  movieSize        BigInt?     @map("movie_size") @db.UnsignedBigInt
+  movieFormat      String?     @map("movie_format") @db.VarChar(20)
+  price            Decimal     @default(0.00) @db.Decimal(10, 2)
+  isFree           Boolean     @default(false) @map("is_free")
+  isFeatured       Boolean     @default(false) @map("is_featured")
+  status           MovieStatus @default(draft)
+  isSeries         Boolean     @default(false) @map("is_series")
+  seriesId         Int?        @map("series_id") @db.UnsignedInt
+  episodeNumber    Int?        @map("episode_number") @db.UnsignedInt
+  seasonNumber     Int?        @map("season_number") @db.UnsignedInt
+  totalViews       Int         @default(0) @map("total_views") @db.UnsignedInt
+  totalPurchases   Int         @default(0) @map("total_purchases") @db.UnsignedInt
+  totalStreams     Int         @default(0) @map("total_streams") @db.UnsignedInt
+  totalDownloads   Int         @default(0) @map("total_downloads") @db.UnsignedInt
+  completionRate   Decimal?    @default(0.00) @map("completion_rate") @db.Decimal(5, 2)
+  popularityScore  Decimal?    @default(0.00) @map("popularity_score") @db.Decimal(10, 2)
+  metadata         Json?
+  publishedAt      DateTime?   @map("published_at")
+  createdBy        Int?        @map("created_by") @db.UnsignedInt
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+  deletedAt        DateTime?   @map("deleted_at")
+
+  category        Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  series          Movie?           @relation("MovieSeries", fields: [seriesId], references: [id], onDelete: SetNull)
+  episodes        Movie[]          @relation("MovieSeries")
+  creator         User?            @relation("MovieCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  orderItems      OrderItem[]
+  library         UserLibrary[]
+  playbackProg    PlaybackProgress[]
+  downloadLogs    DownloadLog[]
+  streamLogs      StreamLog[]
+  dailyViews      MovieViewsDaily[]
+  tags            MovieTagPivot[]
+  movieFiles      MovieFile[]
+  reviews         Review[]
+
+  @@index([slug], name: "idx_movies_slug")
+  @@index([status], name: "idx_movies_status")
+  @@index([categoryId], name: "idx_movies_category")
+  @@index([seriesId], name: "idx_movies_series")
+  @@index([isFeatured], name: "idx_movies_featured")
+  @@index([popularityScore], name: "idx_movies_popularity")
+  @@index([createdAt], name: "idx_movies_created")
+  @@index([publishedAt], name: "idx_movies_published")
+  @@index([price], name: "idx_movies_price")
+  @@index([title], name: "idx_movies_search")
+  @@fulltext([title, description, shortDescription], map: "ft_movies_search")
+  @@map("movies")
+}
+
+// ============================================================================
+// 8. MOVIE FILES (for multiple qualities/versions)
+// ============================================================================
+model MovieFile {
+  id          Int      @id @default(autoincrement()) @db.UnsignedInt
+  movieId     Int      @map("movie_id") @db.UnsignedInt
+  quality     String   @db.VarChar(20)
+  format      String   @db.VarChar(20)
+  fileUrl     String   @map("file_url") @db.VarChar(500)
+  fileSize    BigInt   @map("file_size") @db.UnsignedBigInt
+  duration    Int?     @db.UnsignedInt
+  language    String?  @default("English") @db.VarChar(50)
+  isDefault   Boolean  @default(false) @map("is_default")
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@index([movieId], name: "idx_mf_movie")
+  @@map("movie_files")
+}
+
+// ============================================================================
+// 9. MOVIE TAGS
+// ============================================================================
+model MovieTag {
+  id        Int       @id @default(autoincrement()) @db.UnsignedInt
+  name      String    @unique @db.VarChar(100)
+  slug      String    @unique @db.VarChar(100)
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  movies MovieTagPivot[]
+
+  @@index([slug], name: "idx_mt_slug")
+  @@map("movie_tags")
+}
+
+model MovieTagPivot {
+  movieId Int @map("movie_id") @db.UnsignedInt
+  tagId   Int @map("tag_id") @db.UnsignedInt
+
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  tag   MovieTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([movieId, tagId])
+  @@index([tagId], name: "idx_mtp_tag")
+  @@map("movie_tag_pivot")
+}
+
+// ============================================================================
+// 10. USER LIBRARY (owned movies)
+// ============================================================================
+model UserLibrary {
+  id            Int      @id @default(autoincrement()) @db.UnsignedInt
+  userId        Int      @map("user_id") @db.UnsignedInt
+  movieId       Int      @map("movie_id") @db.UnsignedInt
+  orderId       Int?     @map("order_id") @db.UnsignedInt
+  purchasePrice Decimal  @map("purchase_price") @db.Decimal(10, 2)
+  isAvailable   Boolean  @default(true) @map("is_available")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId], name: "uq_library_user_movie")
+  @@index([userId], name: "idx_ul_user")
+  @@index([movieId], name: "idx_ul_movie")
+  @@map("user_library")
+}
+
+// ============================================================================
+// 11. PLAYBACK PROGRESS
+// ============================================================================
+model PlaybackProgress {
+  id              Int      @id @default(autoincrement()) @db.UnsignedInt
+  userId          Int      @map("user_id") @db.UnsignedInt
+  movieId         Int      @map("movie_id") @db.UnsignedInt
+  positionSeconds Int      @default(0) @map("position_seconds") @db.UnsignedInt
+  durationSeconds Int?     @map("duration_seconds") @db.UnsignedInt
+  completed       Boolean  @default(false)
+  lastWatchedAt   DateTime @default(now()) @updatedAt @map("last_watched_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId], name: "uq_pp_user_movie")
+  @@index([userId], name: "idx_pp_user")
+  @@index([movieId], name: "idx_pp_movie")
+  @@index([lastWatchedAt], name: "idx_pp_last_watched")
+  @@map("playback_progress")
+}
+
+// ============================================================================
+// 12. DOWNLOAD LOG
+// ============================================================================
+model DownloadLog {
+  id           BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  userId       Int      @map("user_id") @db.UnsignedInt
+  movieId      Int      @map("movie_id") @db.UnsignedInt
+  ipAddress    String?  @map("ip_address") @db.VarChar(45)
+  userAgent    String?  @map("user_agent") @db.VarChar(500)
+  downloadSize BigInt?  @map("download_size") @db.UnsignedBigInt
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@index([userId], name: "idx_dl_user")
+  @@index([movieId], name: "idx_dl_movie")
+  @@index([createdAt], name: "idx_dl_created")
+  @@map("download_log")
+}
+
+// ============================================================================
+// 13. STREAM LOG
+// ============================================================================
+model StreamLog {
+  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  userId       Int       @map("user_id") @db.UnsignedInt
+  movieId      Int       @map("movie_id") @db.UnsignedInt
+  ipAddress    String?   @map("ip_address") @db.VarChar(45)
+  userAgent    String?   @map("user_agent") @db.VarChar(500)
+  bytesStreamed BigInt?  @default(0) @map("bytes_streamed") @db.UnsignedBigInt
+  startedAt    DateTime  @default(now()) @map("started_at")
+  endedAt      DateTime? @map("ended_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@index([userId], name: "idx_sl_user")
+  @@index([movieId], name: "idx_sl_movie")
+  @@index([startedAt], name: "idx_sl_started")
+  @@map("stream_log")
+}
+
+// ============================================================================
+// 14. TRANSACTIONS
+// ============================================================================
+model Transaction {
+  id                  Int               @id @default(autoincrement()) @db.UnsignedInt
+  userId              Int               @map("user_id") @db.UnsignedInt
+  orderId             Int?              @map("order_id") @db.UnsignedInt
+  transactionReference String?          @unique @map("transaction_reference") @db.VarChar(100)
+  merchantRequestId   String?           @map("merchant_request_id") @db.VarChar(100)
+  checkoutRequestId   String?           @map("checkout_request_id") @db.VarChar(100)
+  phoneNumber         String?           @map("phone_number") @db.VarChar(20)
+  amount              Decimal           @db.Decimal(10, 2)
+  currency            String            @default("KES") @db.VarChar(10)
+  status              TransactionStatus @default(pending)
+  paymentMethod       String?           @default("mpesa_buy_goods") @map("payment_method") @db.VarChar(50)
+  paymentProvider     String?           @default("safaricom") @map("payment_provider") @db.VarChar(50)
+  resultCode          String?           @map("result_code") @db.VarChar(20)
+  resultDescription   String?           @map("result_description") @db.Text
+  mpesaReceipt        String?           @map("mpesa_receipt") @db.VarChar(100)
+  transactionDate     DateTime?         @map("transaction_date")
+  callbackReceivedAt  DateTime?         @map("callback_received_at")
+  callbackData        Json?             @map("callback_data")
+  metadata            Json?
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  revenue   RevenueRecord[]
+
+  @@index([userId], name: "idx_txn_user")
+  @@index([orderId], name: "idx_txn_order")
+  @@index([transactionReference], name: "idx_txn_reference")
+  @@index([merchantRequestId], name: "idx_txn_merchant")
+  @@index([checkoutRequestId], name: "idx_txn_checkout")
+  @@index([status], name: "idx_txn_status")
+  @@index([createdAt], name: "idx_txn_created")
+  @@map("transactions")
+}
+
+// ============================================================================
+// 15. ORDERS
+// ============================================================================
+model Order {
+  id            Int           @id @default(autoincrement()) @db.UnsignedInt
+  userId        Int           @map("user_id") @db.UnsignedInt
+  orderNumber   String        @unique @map("order_number") @db.VarChar(50)
+  totalAmount   Decimal       @default(0.00) @map("total_amount") @db.Decimal(10, 2)
+  currency      String        @default("KES") @db.VarChar(10)
+  status        OrderStatus   @default(pending)
+  paymentStatus PaymentStatus @default(pending) @map("payment_status")
+  paidAt        DateTime?     @map("paid_at")
+  notes         String?       @db.Text
+  metadata      Json?
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       OrderItem[]
+  receipts    Receipt[]
+  revenues    RevenueRecord[]
+
+  @@index([userId], name: "idx_orders_user")
+  @@index([orderNumber], name: "idx_orders_number")
+  @@index([status], name: "idx_orders_status")
+  @@index([createdAt], name: "idx_orders_created")
+  @@map("orders")
+}
+
+// ============================================================================
+// 16. ORDER ITEMS
+// ============================================================================
+model OrderItem {
+  id        Int      @id @default(autoincrement()) @db.UnsignedInt
+  orderId   Int      @map("order_id") @db.UnsignedInt
+  movieId   Int      @map("movie_id") @db.UnsignedInt
+  itemPrice Decimal  @map("item_price") @db.Decimal(10, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@index([orderId], name: "idx_oi_order")
+  @@index([movieId], name: "idx_oi_movie")
+  @@map("order_items")
+}
+
+// ============================================================================
+// 17. RECEIPTS
+// ============================================================================
+model Receipt {
+  id            Int      @id @default(autoincrement()) @db.UnsignedInt
+  orderId       Int      @map("order_id") @db.UnsignedInt
+  userId        Int      @map("user_id") @db.UnsignedInt
+  receiptNumber String   @unique @map("receipt_number") @db.VarChar(50)
+  receiptData   Json     @map("receipt_data")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orderId], name: "idx_rec_order")
+  @@index([userId], name: "idx_rec_user")
+  @@index([receiptNumber], name: "idx_rec_number")
+  @@map("receipts")
+}
+
+// ============================================================================
+// 18. REVENUE RECORDS
+// ============================================================================
+model RevenueRecord {
+  id                   Int      @id @default(autoincrement()) @db.UnsignedInt
+  orderId              Int      @map("order_id") @db.UnsignedInt
+  transactionId        Int?     @map("transaction_id") @db.UnsignedInt
+  totalAmount          Decimal  @map("total_amount") @db.Decimal(10, 2)
+  developerCommission  Decimal  @default(0.00) @map("developer_commission") @db.Decimal(10, 2)
+  ownerEarnings        Decimal  @default(0.00) @map("owner_earnings") @db.Decimal(10, 2)
+  commissionPercentage Decimal  @default(40.00) @map("commission_percentage") @db.Decimal(5, 2)
+  currency             String   @default("KES") @db.VarChar(10)
+  recordedAt           DateTime @default(now()) @map("recorded_at")
+
+  order       Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@index([orderId], name: "idx_rv_order")
+  @@index([recordedAt], name: "idx_rv_recorded")
+  @@index([transactionId], name: "idx_rv_transaction")
+  @@map("revenue_records")
+}
+
+// ============================================================================
+// 19. AUDIT LOGS
+// ============================================================================
+model AuditLog {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  userId     Int?     @map("user_id") @db.UnsignedInt
+  action     String   @db.VarChar(100)
+  entityType String?  @map("entity_type") @db.VarChar(100)
+  entityId   Int?     @map("entity_id") @db.UnsignedInt
+  oldValues  Json?    @map("old_values")
+  newValues  Json?    @map("new_values")
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  userAgent  String?  @map("user_agent") @db.VarChar(500)
+  details    String?  @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId], name: "idx_al_user")
+  @@index([action], name: "idx_al_action")
+  @@index([entityType, entityId], name: "idx_al_entity")
+  @@index([createdAt], name: "idx_al_created")
+  @@map("audit_logs")
+}
+
+// ============================================================================
+// 20. SUPPORT TICKETS
+// ============================================================================
+model SupportTicket {
+  id           Int          @id @default(autoincrement()) @db.UnsignedInt
+  userId       Int          @map("user_id") @db.UnsignedInt
+  ticketNumber String       @unique @map("ticket_number") @db.VarChar(20)
+  subject      String       @db.VarChar(255)
+  message      String       @db.Text
+  priority     TicketPriority @default(medium)
+  status       TicketStatus @default(open)
+  assignedTo   Int?         @map("assigned_to") @db.UnsignedInt
+  resolvedAt   DateTime?    @map("resolved_at")
+  closedAt     DateTime?    @map("closed_at")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  user    User                @relation("TicketOwner", fields: [userId], references: [id], onDelete: Cascade)
+  assignee User?              @relation("TicketAssignee", fields: [assignedTo], references: [id], onDelete: SetNull)
+  replies SupportTicketReply[]
+
+  @@index([userId], name: "idx_st_user")
+  @@index([status], name: "idx_st_status")
+  @@index([priority], name: "idx_st_priority")
+  @@index([assignedTo], name: "idx_st_assigned")
+  @@index([createdAt], name: "idx_st_created")
+  @@map("support_tickets")
+}
+
+// ============================================================================
+// 21. SUPPORT TICKET REPLIES
+// ============================================================================
+model SupportTicketReply {
+  id        Int      @id @default(autoincrement()) @db.UnsignedInt
+  ticketId  Int      @map("ticket_id") @db.UnsignedInt
+  userId    Int      @map("user_id") @db.UnsignedInt
+  message   String   @db.Text
+  isStaff   Boolean  @default(false) @map("is_staff")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId], name: "idx_str_ticket")
+  @@index([userId], name: "idx_str_user")
+  @@map("support_ticket_replies")
+}
+
+// ============================================================================
+// 22. NOTIFICATIONS
+// ============================================================================
+model Notification {
+  id        Int      @id @default(autoincrement()) @db.UnsignedInt
+  userId    Int?     @map("user_id") @db.UnsignedInt
+  type      String   @db.VarChar(50)
+  title     String   @db.VarChar(255)
+  message   String   @db.Text
+  data      Json?
+  isRead    Boolean  @default(false) @map("is_read")
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], name: "idx_notif_user")
+  @@index([type], name: "idx_notif_type")
+  @@index([isRead], name: "idx_notif_read")
+  @@index([createdAt], name: "idx_notif_created")
+  @@map("notifications")
+}
+
+// ============================================================================
+// 23. SYSTEM CONFIGURATION
+// ============================================================================
+model SystemConfiguration {
+  id          Int      @id @default(autoincrement()) @db.UnsignedInt
+  configKey   String   @unique @map("config_key") @db.VarChar(100)
+  configValue String   @map("config_value") @db.Text
+  description String?  @db.VarChar(255)
+  isEncrypted Boolean  @default(false) @map("is_encrypted")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([configKey], name: "idx_sc_key")
+  @@map("system_configurations")
+}
+
+// ============================================================================
+// 24. MOVIE VIEWS DAILY (Analytics aggregation)
+// ============================================================================
+model MovieViewsDaily {
+  id             BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  movieId        Int      @map("movie_id") @db.UnsignedInt
+  viewDate       DateTime @map("view_date") @db.Date
+  viewCount      Int      @default(0) @map("view_count") @db.UnsignedInt
+  streamCount    Int      @default(0) @map("stream_count") @db.UnsignedInt
+  downloadCount  Int      @default(0) @map("download_count") @db.UnsignedInt
+  purchaseCount  Int      @default(0) @map("purchase_count") @db.UnsignedInt
+  uniqueViewers  Int      @default(0) @map("unique_viewers") @db.UnsignedInt
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([movieId, viewDate], name: "uq_mvd_movie_date")
+  @@index([viewDate], name: "idx_mvd_date")
+  @@map("movie_views_daily")
+}
+
+// ============================================================================
+// 25. REVIEWS
+// ============================================================================
+model Review {
+  id        Int      @id @default(autoincrement()) @db.UnsignedInt
+  userId    Int      @map("user_id") @db.UnsignedInt
+  movieId   Int      @map("movie_id") @db.UnsignedInt
+  rating    Int      @db.UnsignedInt
+  comment   String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId], name: "uq_review_user_movie")
+  @@index([movieId], name: "idx_review_movie")
+  @@index([userId], name: "idx_review_user")
+  @@index([rating], name: "idx_review_rating")
+  @@map("reviews")
+}
+
+// ============================================================================
+// 26. PLATFORM STATISTICS
+// ============================================================================
+model PlatformStatistic {
+  id                  Int      @id @default(autoincrement()) @db.UnsignedInt
+  statDate            DateTime @unique @map("stat_date") @db.Date
+  totalUsers          Int      @default(0) @map("total_users") @db.UnsignedInt
+  newUsers            Int      @default(0) @map("new_users") @db.UnsignedInt
+  totalMovies         Int      @default(0) @map("total_movies") @db.UnsignedInt
+  totalOrders         Int      @default(0) @map("total_orders") @db.UnsignedInt
+  totalRevenue        Decimal  @default(0.00) @map("total_revenue") @db.Decimal(15, 2)
+  developerCommission Decimal  @default(0.00) @map("developer_commission") @db.Decimal(15, 2)
+  ownerEarnings       Decimal  @default(0.00) @map("owner_earnings") @db.Decimal(15, 2)
+  totalStreams        Int      @default(0) @map("total_streams") @db.UnsignedInt
+  totalDownloads      Int      @default(0) @map("total_downloads") @db.UnsignedInt
+  activeUsers         Int      @default(0) @map("active_users") @db.UnsignedInt
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@index([statDate], name: "idx_ps_date")
+  @@map("platform_statistics")
+}

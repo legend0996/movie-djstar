@@ -34,8 +34,8 @@ async function seed() {
     if (existingDev.length === 0) {
       const passwordHash = await bcrypt.hash('Admin@123456', 12);
       await connection.execute(
-        `INSERT INTO users (role_id, username, email, password_hash, status, email_verified_at, first_name, last_name)
-         VALUES (?, 'developer', 'dev@djstarmovies.com', ?, 'active', NOW(), 'Platform', 'Developer')`,
+        `INSERT INTO users (role_id, username, email, password_hash, status, email_verified_at, first_name, last_name, created_at, updated_at)
+         VALUES (?, 'developer', 'dev@djstarmovies.com', ?, 'active', NOW(), 'Platform', 'Developer', NOW(), NOW())`,
         [roleMap['developer'], passwordHash]
       );
       console.log('Developer account created: dev@djstarmovies.com / Admin@123456');
@@ -49,8 +49,8 @@ async function seed() {
     if (existingOwner.length === 0) {
       const passwordHash = await bcrypt.hash('Owner@123456', 12);
       await connection.execute(
-        `INSERT INTO users (role_id, username, email, password_hash, status, email_verified_at, first_name, last_name)
-         VALUES (?, 'movieowner', 'owner@djstarmovies.com', ?, 'active', NOW(), 'Movie', 'Owner')`,
+        `INSERT INTO users (role_id, username, email, password_hash, status, email_verified_at, first_name, last_name, created_at, updated_at)
+         VALUES (?, 'movieowner', 'owner@djstarmovies.com', ?, 'active', NOW(), 'Movie', 'Owner', NOW(), NOW())`,
         [roleMap['movie_owner'], passwordHash]
       );
       console.log('Movie Owner account created: owner@djstarmovies.com / Owner@123456');
@@ -63,8 +63,8 @@ async function seed() {
     if (existingUser.length === 0) {
       const passwordHash = await bcrypt.hash('Demo@123456', 12);
       await connection.execute(
-        `INSERT INTO users (role_id, username, email, password_hash, status, email_verified_at, first_name, last_name)
-         VALUES (?, 'demo', 'demo@djstarmovies.com', ?, 'active', NOW(), 'Demo', 'User')`,
+        `INSERT INTO users (role_id, username, email, password_hash, status, email_verified_at, first_name, last_name, created_at, updated_at)
+         VALUES (?, 'demo', 'demo@djstarmovies.com', ?, 'active', NOW(), 'Demo', 'User', NOW(), NOW())`,
         [roleMap['user'], passwordHash]
       );
       console.log('Demo user account created: demo@djstarmovies.com / Demo@123456');
