@@ -30,10 +30,11 @@ export function AuthProvider({ children }) {
 
   const login = useCallback((data) => {
     const u = data.user || data;
-    const accessToken = data.accessToken || localStorage.getItem('accessToken');
-    const refreshToken = data.refreshToken || localStorage.getItem('refreshToken');
-    if (data.accessToken) localStorage.setItem('accessToken', data.accessToken);
-    if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
+    const tokens = data.tokens || data;
+    const accessToken = tokens.accessToken || localStorage.getItem('accessToken');
+    const refreshToken = tokens.refreshToken || localStorage.getItem('refreshToken');
+    if (accessToken) localStorage.setItem('accessToken', accessToken);
+    if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
     setUser(u);
   }, []);
 
