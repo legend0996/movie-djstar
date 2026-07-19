@@ -1,6 +1,5 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useFetch } from '../../hooks/useApi';
 import Loader from '../../components/Loader';
 import VideoPlayer from '../../components/VideoPlayer';
@@ -10,6 +9,7 @@ import { formatDuration, getImageUrl } from '../../utils/format';
 
 export default function WatchPage() {
   const { id } = useParams();
+  const [downloading, setDownloading] = useState(false);
 
   const { data: movie, isLoading } = useFetch(['watch', id], `/movies/${id}`);
 
@@ -18,6 +18,24 @@ export default function WatchPage() {
       client.post(`/movies/${movie.data.id}/view`).catch(() => {});
     }
   }, [movie]);
+
+  const handleDownload = useCallback(async () => {
+    setDownloading(true);
+    try {
+      const { data } = await client.get(`/stream/signed-url/${id}`);
+      const a = document.createElement('a');
+      a.href = data.data.url;
+      a.download = 'movie.mp4';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (err) {
+      const { toast } = await import('../../components/Toast');
+      toast(err.response?.data?.message || 'Download failed', 'error');
+    } finally {
+      setDownloading(false);
+    }
+  }, [id]);
 
   const handleProgress = useCallback((time) => {
     if (movie?.data?.id) {

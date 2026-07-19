@@ -8,6 +8,7 @@ import EmptyState from '../../components/EmptyState';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import MovieRow from '../../components/MovieRow';
 import PurchaseModal from '../../components/PurchaseModal';
+import TrailerModal from '../../components/TrailerModal';
 import ReviewSection from '../../components/ReviewSection';
 import { formatCurrency, formatDuration, getImageUrl } from '../../utils/format';
 
@@ -16,6 +17,7 @@ export default function MovieDetailPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [showPurchase, setShowPurchase] = useState(false);
+  const [showTrailer, setShowTrailer] = useState(false);
 
   const { data: movie, isLoading } = useFetch(['movie', slug], `/movies/slug/${slug}`);
   const { data: related } = useFetch(
@@ -111,9 +113,9 @@ export default function MovieDetailPage() {
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
                         </svg>
-                        Purchase - {formatCurrency(m.price)}
+                        Buy Now - {formatCurrency(m.price)}
                       </button>
-                      <button onClick={() => setShowPurchase(true)} className="btn-secondary inline-flex items-center gap-2">
+                      <button onClick={() => setShowTrailer(true)} className="btn-secondary inline-flex items-center gap-2">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -259,6 +261,7 @@ export default function MovieDetailPage() {
         )}
 
         {showPurchase && <PurchaseModal movie={m} onClose={() => setShowPurchase(false)} />}
+        {showTrailer && <TrailerModal movie={m} onClose={() => setShowTrailer(false)} />}
       </div>
     </div>
   );
