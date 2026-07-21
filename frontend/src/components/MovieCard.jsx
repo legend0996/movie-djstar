@@ -27,11 +27,11 @@ export default function MovieCard({ movie, index = 0 }) {
             loading="lazy"
           />
 
-          {/* Gradient edge fade */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          {/* Gradient edge fade - always visible on mobile/touch */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-500" />
 
-          {/* Hover overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-brand-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-400 flex flex-col items-center justify-end p-4 pb-6">
+          {/* Hover overlay - always visible on mobile/touch */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-brand-primary/10 to-transparent opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-400 flex flex-col items-center justify-end p-4 pb-6">
             <div className="flex gap-2 w-full translate-y-4 group-hover:translate-y-0 transition-transform duration-400">
               <span
                 className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-all duration-200 ${

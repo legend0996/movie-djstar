@@ -39,7 +39,7 @@ export default function MovieRow({ title, subtitle, viewAllLink, movies, isLoadi
         {viewAllLink && movies?.length > 0 && (
           <Link
             to={viewAllLink}
-            className="text-sm font-medium text-gray-400 hover:text-white transition-colors hidden sm:inline-flex items-center gap-1 group/link"
+            className="text-sm font-medium text-gray-400 hover:text-white transition-colors inline-flex items-center gap-1 group/link"
           >
             View All
             <svg className="w-4 h-4 transition-transform duration-200 group-hover/link:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -50,11 +50,11 @@ export default function MovieRow({ title, subtitle, viewAllLink, movies, isLoadi
       </div>
 
       <div className="relative">
-        {/* Left arrow */}
+        {/* Left arrow - always visible on mobile/touch */}
         {showLeftArrow && (
           <button
             onClick={() => scroll(-1)}
-            className="absolute left-0 top-0 bottom-0 z-10 w-12 bg-gradient-to-r from-brand-bg to-transparent flex items-center justify-start pl-2 opacity-0 group-hover/row:opacity-100 transition-opacity duration-300"
+            className="absolute left-0 top-0 bottom-0 z-10 w-12 bg-gradient-to-r from-brand-bg to-transparent flex items-center justify-start pl-2 opacity-100 lg:opacity-0 lg:group-hover/row:opacity-100 transition-opacity duration-300"
             aria-label="Scroll left"
           >
             <div className="w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center hover:bg-black/80 transition-colors">
@@ -65,11 +65,11 @@ export default function MovieRow({ title, subtitle, viewAllLink, movies, isLoadi
           </button>
         )}
 
-        {/* Right arrow */}
+        {/* Right arrow - always visible on mobile/touch */}
         {showRightArrow && (
           <button
             onClick={() => scroll(1)}
-            className="absolute right-0 top-0 bottom-0 z-10 w-12 bg-gradient-to-l from-brand-bg to-transparent flex items-center justify-end pr-2 opacity-0 group-hover/row:opacity-100 transition-opacity duration-300"
+            className="absolute right-0 top-0 bottom-0 z-10 w-12 bg-gradient-to-l from-brand-bg to-transparent flex items-center justify-end pr-2 opacity-100 lg:opacity-0 lg:group-hover/row:opacity-100 transition-opacity duration-300"
             aria-label="Scroll right"
           >
             <div className="w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center hover:bg-black/80 transition-colors">

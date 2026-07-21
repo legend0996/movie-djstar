@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { ROLES } from '../constants';
 import Toast from '../components/Toast';
@@ -22,11 +23,32 @@ export default function AdminLayout() {
   const { user } = useAuth();
   const location = useLocation();
   const visible = navItems.filter((n) => n.roles.includes(user?.role));
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-brand-bg">
-      <div className="flex">
-        <aside className="w-64 min-h-screen bg-brand-surface border-r border-brand-border p-4 flex flex-col flex-shrink-0">
+      <div className="flex min-h-screen">
+        {/* Mobile sidebar backdrop */}
+        <AnimatePresence>
+          {sidebarOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSidebarOpen(false)}
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Sidebar */}
+        <aside
+          className={`
+            fixed lg:sticky top-0 left-0 z-50 w-64 min-h-screen bg-brand-surface border-r border-brand-border p-4 flex flex-col flex-shrink-0
+            transition-transform duration-300
+            ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          `}
+        >
           <div className="mb-6 px-4">
             <p className="text-xs uppercase tracking-widest text-gray-500 font-medium mb-3">Admin Panel</p>
             <div className="flex items-center gap-2">
@@ -45,6 +67,7 @@ export default function AdminLayout() {
               <NavLink
                 key={item.to}
                 to={item.to}
+                onClick={() => setSidebarOpen(false)}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 group ${
                     isActive
@@ -70,7 +93,33 @@ export default function AdminLayout() {
             Back to Site
           </NavLink>
         </aside>
-        <main className="flex-1 p-6 lg:p-8 min-h-screen">
+
+        {/* Main content */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 min-h-screen min-w-0">
+          {/* Mobile header with hamburger */}
+          <div className="flex items-center gap-3 mb-6 lg:hidden">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+              aria-label="Open sidebar menu"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-brand-primary rounded flex items-center justify-center">
+                <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+                </svg>
+              </div>
+              <span className="font-heading font-bold text-white">
+                DJ<span className="text-brand-primary">Star</span>
+              </span>
+              <span className="text-xs text-gray-500 ml-1">Admin</span>
+            </div>
+          </div>
+
           <motion.div
             key={location.pathname}
             initial={{ opacity: 0, y: 8 }}

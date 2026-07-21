@@ -167,10 +167,10 @@ export default function HeroCarousel({ movies, isLoading }) {
         ))}
       </div>
 
-      {/* Prev/Next buttons */}
+      {/* Prev/Next buttons - always visible on mobile/touch, fade on hover on desktop */}
       <button
         onClick={prev}
-        className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white transition-all opacity-0 hover:opacity-100 focus:opacity-100"
+        className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white transition-all opacity-100 lg:opacity-0 lg:hover:opacity-100 focus:opacity-100"
         aria-label="Previous slide"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -179,7 +179,7 @@ export default function HeroCarousel({ movies, isLoading }) {
       </button>
       <button
         onClick={next}
-        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white transition-all opacity-0 hover:opacity-100 focus:opacity-100"
+        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white transition-all opacity-100 lg:opacity-0 lg:hover:opacity-100 focus:opacity-100"
         aria-label="Next slide"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

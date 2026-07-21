@@ -47,6 +47,19 @@
     box-shadow: 0 0 30px -5px rgba(245, 197, 24, 0.1);
   }
 
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .can-hover\:opacity-0 {
+    opacity: 1;
+  }
+  @media (hover: hover) {
+    .can-hover\:opacity-0 {
+      opacity: 0;
+    }
+  }
+
   .card-glass {
     @apply bg-brand-card/80 backdrop-blur-sm border border-white/5 rounded-xl;
   }
