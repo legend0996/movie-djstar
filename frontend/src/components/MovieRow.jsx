@@ -33,16 +33,16 @@ export default function MovieRow({ title, subtitle, viewAllLink, movies, isLoadi
     <section className="relative group/row">
       <div className="section-header">
         <div>
-          <h2 className="section-title text-white">{title}</h2>
+          <h2 className="section-title text-gradient-brand">{title}</h2>
           {subtitle && <p className="text-gray-500 text-sm mt-1">{subtitle}</p>}
         </div>
         {viewAllLink && movies?.length > 0 && (
           <Link
             to={viewAllLink}
-            className="text-sm font-medium text-gray-400 hover:text-white transition-colors hidden sm:inline-flex items-center gap-1"
+            className="text-sm font-medium text-gray-400 hover:text-white transition-colors hidden sm:inline-flex items-center gap-1 group/link"
           >
             View All
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 transition-transform duration-200 group-hover/link:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </Link>

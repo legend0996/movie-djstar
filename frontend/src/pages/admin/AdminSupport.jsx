@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useFetch } from '../../hooks/useApi';
 import { useToast } from '../../components/Toast';
 import Loader from '../../components/Loader';
@@ -18,6 +17,9 @@ export default function AdminSupport() {
   const { toast } = useToast();
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState('open');
+  const [replyOpen, setReplyOpen] = useState(null);
+  const [replyMessage, setReplyMessage] = useState('');
+  const [replying, setReplying] = useState(false);
   const { data, isLoading, refetch } = useFetch(['admin-tickets', page, filter], `/admin/support/tickets?page=${page}&limit=20&status=${filter}`);
 
   async function handleStatus(ticketId, status) {
@@ -28,6 +30,21 @@ export default function AdminSupport() {
     } catch (err) {
       toast(err.response?.data?.message || 'Failed', 'error');
     }
+  }
+
+  async function handleReply(ticketId) {
+    if (!replyMessage.trim()) return;
+    setReplying(true);
+    try {
+      await client.post(`/admin/support/tickets/${ticketId}/reply`, { message: replyMessage });
+      toast('Reply sent', 'success');
+      setReplyMessage('');
+      setReplyOpen(null);
+      refetch();
+    } catch (err) {
+      toast(err.response?.data?.message || 'Failed to send reply', 'error');
+    }
+    setReplying(false);
   }
 
   return (
@@ -67,10 +84,10 @@ export default function AdminSupport() {
           <div className="space-y-3">
             {data?.data?.map((ticket) => (
               <div key={ticket.id} className="bg-brand-card rounded-xl border border-brand-border p-5 hover:border-brand-primary/30 transition-all duration-200">
-                <div className="flex items-start justify-between mb-3">
-                  <Link to={`/support/${ticket.id}`} className="font-semibold text-white hover:text-brand-primary transition-colors">
+                  <div className="flex items-start justify-between mb-3">
+                  <button onClick={() => setReplyOpen(replyOpen === ticket.id ? null : ticket.id)} className="font-semibold text-white hover:text-brand-primary transition-colors text-left">
                     {ticket.subject}
-                  </Link>
+                  </button>
                   <span className={getStatusBadge(ticket.status)}>{ticket.status.replace('_', ' ')}</span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -102,6 +119,22 @@ export default function AdminSupport() {
                     )}
                   </div>
                 </div>
+                {replyOpen === ticket.id && ticket.status !== 'closed' && ticket.status !== 'resolved' && (
+                  <div className="mt-4 pt-4 border-t border-brand-border">
+                    <textarea
+                      className="input-field min-h-[80px] mb-3"
+                      placeholder="Type your reply..."
+                      value={replyMessage}
+                      onChange={(e) => setReplyMessage(e.target.value)}
+                    />
+                    <div className="flex gap-2">
+                      <button onClick={() => handleReply(ticket.id)} disabled={replying || !replyMessage.trim()} className="btn-primary text-sm">
+                        {replying ? 'Sending...' : 'Send Reply'}
+                      </button>
+                      <button onClick={() => { setReplyOpen(null); setReplyMessage(''); }} className="btn-secondary text-sm">Cancel</button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

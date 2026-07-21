@@ -1,55 +1,49 @@
 import { useState } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import client from '../../api/client';
 
 export default function ResetPasswordPage() {
-  const [searchParams] = useSearchParams();
-  const token = searchParams.get('token');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [form, setForm] = useState({ email: '', code: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
+  function handleChange(e) {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setError('');
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
-    if (password !== confirmPassword) {
+    if (form.password !== form.confirmPassword) {
       setError('Passwords do not match');
       return;
     }
-    if (!token) {
-      setError('Invalid or missing reset token');
+    if (form.password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(form.password)) {
+      setError('Password must include uppercase, lowercase, number, and special character');
       return;
     }
     setLoading(true);
     setError('');
     try {
-      await client.post('/auth/reset-password', { token, password });
+      await client.post('/auth/reset-password', {
+        email: form.email,
+        code: form.code,
+        password: form.password,
+        confirmPassword: form.confirmPassword,
+      });
       setSuccess(true);
       setTimeout(() => navigate('/login'), 3000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to reset password');
     }
     setLoading(false);
-  }
-
-  if (!token) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-brand-bg">
-        <div className="text-center max-w-md mx-auto p-8">
-          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          </div>
-          <h1 className="font-heading font-bold text-2xl text-white mb-2">Invalid Link</h1>
-          <p className="text-gray-400 mb-6">This password reset link is invalid or has expired.</p>
-          <Link to="/forgot-password" className="text-brand-primary hover:text-brand-hover font-medium">Request a new link</Link>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -62,9 +56,9 @@ export default function ResetPasswordPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
-            <h2 className="font-heading font-bold text-4xl text-white mb-3">Choose New Password</h2>
+            <h2 className="font-heading font-bold text-4xl text-white mb-3">Reset Your Password</h2>
             <p className="text-gray-400 text-lg max-w-md mx-auto">
-              Create a strong password that you haven't used before.
+              Enter the verification code sent to your email and choose a new password.
             </p>
           </div>
         </div>
@@ -99,16 +93,24 @@ export default function ResetPasswordPage() {
           ) : (
             <>
               <h1 className="font-heading font-bold text-3xl text-white mb-1">Reset Password</h1>
-              <p className="text-gray-500 mb-8">Enter your new password below</p>
+              <p className="text-gray-500 mb-8">Enter the code from your email</p>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="label">Email</label>
+                  <input name="email" type="email" className="input-field" placeholder="you@example.com" value={form.email} onChange={handleChange} required />
+                </div>
+                <div>
+                  <label className="label">Verification Code</label>
+                  <input name="code" className="input-field text-center tracking-[0.5em] font-mono" placeholder="000000" maxLength={6} value={form.code} onChange={handleChange} required />
+                </div>
                 <div>
                   <label className="label">New Password</label>
-                  <input type="password" className="input-field" placeholder="Min. 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+                  <input name="password" type="password" className="input-field" placeholder="Min. 8 characters with uppercase, lowercase, number & special char" value={form.password} onChange={handleChange} required />
                 </div>
                 <div>
                   <label className="label">Confirm New Password</label>
-                  <input type="password" className="input-field" placeholder="Repeat your password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+                  <input name="confirmPassword" type="password" className="input-field" placeholder="Repeat your password" value={form.confirmPassword} onChange={handleChange} required />
                 </div>
                 {error && <p className="text-red-400 text-sm">{error}</p>}
                 <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
@@ -121,6 +123,9 @@ export default function ResetPasswordPage() {
                     'Reset Password'
                   )}
                 </button>
+                <p className="text-center text-sm text-gray-500">
+                  <Link to="/forgot-password" className="text-brand-primary hover:text-brand-hover font-medium transition-colors">Request a new code</Link>
+                </p>
               </form>
             </>
           )}

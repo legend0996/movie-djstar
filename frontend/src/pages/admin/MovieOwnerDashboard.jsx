@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useFetch } from '../../hooks/useApi';
 import { useToast } from '../../components/Toast';
 import Loader from '../../components/Loader';
@@ -9,6 +9,12 @@ import client from '../../api/client';
 export default function MovieOwnerDashboard() {
   const { toast } = useToast();
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [uploading, setUploading] = useState(null);
+  const posterRef = useRef(null);
+  const trailerRef = useRef(null);
+  const movieRef = useRef(null);
+  const [uploadTarget, setUploadTarget] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editMovie, setEditMovie] = useState(null);
   const [form, setForm] = useState({
@@ -17,7 +23,7 @@ export default function MovieOwnerDashboard() {
     videoUrl: '', posterUrl: '',
   });
   const [saving, setSaving] = useState(false);
-  const { data, isLoading, refetch } = useFetch(['admin-movies', page], `/movies?page=${page}&limit=20`);
+  const { data, isLoading, refetch } = useFetch(['admin-movies', page, search], `/movies?page=${page}&limit=20${search ? `&search=${search}` : ''}`);
   const { data: stats } = useFetch('admin-stats', '/admin/movie-owner/dashboard');
 
   function resetForm() {
@@ -61,6 +67,26 @@ export default function MovieOwnerDashboard() {
       toast(err.response?.data?.message || 'Failed', 'error');
     }
     setSaving(false);
+  }
+
+  async function handleUpload(movieId, field) {
+    const ref = { poster: posterRef, trailer: trailerRef, movie: movieRef }[field];
+    const file = ref?.current?.files?.[0];
+    if (!file) return;
+    setUploading(movieId);
+    const formData = new FormData();
+    formData.append(field, file);
+    try {
+      await client.post(`/admin/movies/${movieId}/${field}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      toast(`${field} uploaded`, 'success');
+      ref.current.value = '';
+      setUploadTarget(null);
+    } catch (err) {
+      toast(err.response?.data?.message || 'Upload failed', 'error');
+    }
+    setUploading(null);
   }
 
   const s = stats?.data;
@@ -174,6 +200,24 @@ export default function MovieOwnerDashboard() {
         </form>
       )}
 
+      <div className="flex items-center gap-3 mb-6">
+        <input
+          className="input-field max-w-xs"
+          placeholder="Search movies..."
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+        />
+        {search && (
+          <button onClick={() => { setSearch(''); setPage(1); }} className="text-sm text-gray-500 hover:text-white transition-colors">
+            Clear
+          </button>
+        )}
+      </div>
+
+      <input ref={posterRef} type="file" accept="image/*" className="hidden" onChange={() => uploadTarget && handleUpload(uploadTarget, 'poster')} />
+      <input ref={trailerRef} type="file" accept="video/*" className="hidden" onChange={() => uploadTarget && handleUpload(uploadTarget, 'trailer')} />
+      <input ref={movieRef} type="file" accept="video/*" className="hidden" onChange={() => uploadTarget && handleUpload(uploadTarget, 'movie')} />
+
       {isLoading ? (
         <Loader />
       ) : (
@@ -203,7 +247,12 @@ export default function MovieOwnerDashboard() {
                       </td>
                       <td className="py-3.5 px-4 text-gray-400 hidden lg:table-cell">{movie.totalViews?.toLocaleString() || 0}</td>
                       <td className="py-3.5 px-4 text-right">
-                        <button onClick={() => handleEdit(movie)} className="text-brand-primary hover:text-brand-hover text-sm font-medium transition-colors">Edit</button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button onClick={() => { setUploadTarget(movie.id); posterRef.current?.click(); }} disabled={uploading === movie.id} className="text-xs text-gray-500 hover:text-white transition-colors" title="Upload poster">Poster</button>
+                          <button onClick={() => { setUploadTarget(movie.id); trailerRef.current?.click(); }} disabled={uploading === movie.id} className="text-xs text-gray-500 hover:text-white transition-colors" title="Upload trailer">Trailer</button>
+                          <button onClick={() => { setUploadTarget(movie.id); movieRef.current?.click(); }} disabled={uploading === movie.id} className="text-xs text-gray-500 hover:text-white transition-colors" title="Upload movie file">File</button>
+                          <button onClick={() => handleEdit(movie)} className="text-brand-primary hover:text-brand-hover text-sm font-medium transition-colors">Edit</button>
+                        </div>
                       </td>
                     </tr>
                   ))}

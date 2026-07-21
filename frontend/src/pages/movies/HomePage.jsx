@@ -23,7 +23,11 @@ export default function HomePage() {
   const recentMovies = recent?.data || [];
 
   return (
-    <div className="bg-brand-bg">
+    <div className="bg-brand-bg relative bg-noise">
+      {/* Ambient background glow */}
+      <div className="absolute top-1/3 left-1/4 w-[600px] h-[600px] bg-brand-primary/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-2/3 right-1/4 w-[400px] h-[400px] bg-brand-accent/3 rounded-full blur-[100px] pointer-events-none" />
+
       {/* Hero Carousel */}
       <HeroCarousel movies={featuredMovies} isLoading={featuredLoading} />
 

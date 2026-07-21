@@ -48,11 +48,11 @@ export default function BrowsePage() {
   }
 
   return (
-    <div className="bg-brand-bg min-h-screen">
+    <div className="bg-brand-bg min-h-screen bg-noise">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="section-title text-white mb-2">Browse Movies</h1>
+          <h1 className="section-title text-gradient-brand mb-2">Browse Movies</h1>
           <p className="text-gray-500">Discover our collection of premium films</p>
         </div>
 

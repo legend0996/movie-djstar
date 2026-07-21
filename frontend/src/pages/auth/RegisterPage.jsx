@@ -1,11 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 
 export default function RegisterPage() {
-  const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '' });
+  const [form, setForm] = useState({ username: '', email: '', phone: '', firstName: '', lastName: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -23,8 +23,12 @@ export default function RegisterPage() {
       setError('Passwords do not match');
       return;
     }
-    if (form.password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (form.password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(form.password)) {
+      setError('Password must include uppercase, lowercase, number, and special character');
       return;
     }
     setLoading(true);
@@ -33,8 +37,11 @@ export default function RegisterPage() {
       const { data } = await client.post('/auth/register', {
         username: form.username,
         email: form.email,
+        phone: form.phone || undefined,
+        firstName: form.firstName || undefined,
+        lastName: form.lastName || undefined,
         password: form.password,
-        confirmPassword: form.password,
+        confirmPassword: form.confirmPassword,
       });
       navigate('/verify-email', {
         state: { email: form.email, code: data.data.verificationCode },
@@ -46,9 +53,10 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-brand-bg">
+    <div className="min-h-screen flex bg-brand-bg bg-noise">
       {/* Left - Artwork */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-brand-primary/20 via-brand-bg to-brand-bg">
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-brand-primary/15 via-brand-bg to-brand-bg">
+        <div className="absolute inset-0 hero-gradient" />
         <div className="absolute inset-0 flex items-center justify-center p-16">
           <div className="text-center">
             <div className="w-24 h-24 bg-brand-primary rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-brand-primary/30">
@@ -95,6 +103,16 @@ export default function RegisterPage() {
           <p className="text-gray-500 mb-8">Start your premium movie experience</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="label">First Name</label>
+                <input name="firstName" className="input-field" placeholder="John" value={form.firstName} onChange={handleChange} />
+              </div>
+              <div>
+                <label className="label">Last Name</label>
+                <input name="lastName" className="input-field" placeholder="Doe" value={form.lastName} onChange={handleChange} />
+              </div>
+            </div>
             <div>
               <label className="label">Username</label>
               <input name="username" className="input-field" placeholder="Choose a username" value={form.username} onChange={handleChange} required minLength={3} />
@@ -104,9 +122,14 @@ export default function RegisterPage() {
               <input name="email" type="email" className="input-field" placeholder="you@example.com" value={form.email} onChange={handleChange} required />
             </div>
             <div>
+              <label className="label">Phone (optional)</label>
+              <input name="phone" className="input-field" placeholder="0712345678" value={form.phone} onChange={handleChange} />
+              <p className="text-xs text-gray-500 mt-1">Kenyan Safaricom number</p>
+            </div>
+            <div>
               <label className="label">Password</label>
               <div className="relative">
-                <input name="password" type={showPassword ? 'text' : 'password'} className="input-field pr-10" placeholder="Create a password" value={form.password} onChange={handleChange} required minLength={6} />
+                <input name="password" type={showPassword ? 'text' : 'password'} className="input-field pr-10" placeholder="Create a password" value={form.password} onChange={handleChange} required />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300" tabIndex={-1}>
                   {showPassword ? (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,6 +143,7 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
+              <p className="text-xs text-gray-500 mt-1">Min. 8 characters with uppercase, lowercase, number & special character</p>
             </div>
             <div>
               <label className="label">Confirm Password</label>

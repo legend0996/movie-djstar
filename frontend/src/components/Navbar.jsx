@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import NotificationBell from './NotificationBell';
 
@@ -14,7 +14,6 @@ const navLinks = [
 export default function Navbar({ onSearchOpen }) {
   const { user, logout } = useAuth();
   const location = useLocation();
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -22,10 +21,6 @@ export default function Navbar({ onSearchOpen }) {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
-
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [location]);
 
   const isHome = location.pathname === '/';
 
@@ -77,8 +72,8 @@ export default function Navbar({ onSearchOpen }) {
               })}
             </div>
 
-            {/* Desktop right */}
-            <div className="hidden lg:flex items-center gap-3">
+            {/* Right side */}
+            <div className="flex items-center gap-2">
               <button
                 onClick={onSearchOpen}
                 className="p-2.5 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-all duration-200"
@@ -92,7 +87,8 @@ export default function Navbar({ onSearchOpen }) {
               {user ? (
                 <>
                   <NotificationBell />
-                  <div className="flex items-center gap-2 pl-2 border-l border-white/10">
+                  {/* Desktop-only user menu */}
+                  <div className="hidden lg:flex items-center gap-2 pl-2 border-l border-white/10">
                     <Link
                       to="/profile"
                       className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white/10 transition-all duration-200"
@@ -121,7 +117,7 @@ export default function Navbar({ onSearchOpen }) {
                   </div>
                 </>
               ) : (
-                <div className="flex items-center gap-2">
+                <div className="hidden lg:flex items-center gap-2">
                   <Link to="/login" className="btn-ghost text-sm !py-2 !px-4">
                     Sign In
                   </Link>
@@ -132,92 +128,9 @@ export default function Navbar({ onSearchOpen }) {
               )}
             </div>
 
-            {/* Mobile hamburger */}
-            <button
-              className="lg:hidden p-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all"
-              onClick={() => setMobileOpen(!mobileOpen)}
-              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {mobileOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
-            </button>
           </div>
         </div>
       </motion.nav>
-
-      {/* Mobile menu */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0, x: '100%' }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-0 z-40 lg:hidden"
-          >
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-            <div className="absolute right-0 top-0 bottom-0 w-72 max-w-[85vw] bg-brand-surface p-6 pt-24 shadow-2xl overflow-y-auto">
-              <nav className="space-y-1">
-                {navLinks.map((link) => {
-                  if (link.auth && !user) return null;
-                  return (
-                    <NavLink
-                      key={link.to}
-                      to={link.to}
-                      onClick={() => setMobileOpen(false)}
-                      className={({ isActive }) =>
-                        `block px-4 py-3 rounded-lg text-sm font-medium transition-all ${
-                          isActive
-                            ? 'text-white bg-white/10'
-                            : 'text-gray-400 hover:text-white hover:bg-white/5'
-                        }`
-                      }
-                    >
-                      {link.label}
-                    </NavLink>
-                  );
-                })}
-                <hr className="border-white/10 my-4" />
-                {user ? (
-                  <>
-                    <Link to="/profile" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-white/5">
-                      <div className="w-8 h-8 rounded-full bg-brand-primary flex items-center justify-center text-sm font-bold">
-                        {user.username?.[0]?.toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-white">{user.username}</p>
-                        <p className="text-xs text-gray-500">{user.email}</p>
-                      </div>
-                    </Link>
-                    {(user.role === 'movie_owner' || user.role === 'developer') && (
-                      <Link to="/admin/movies" onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5">
-                        Admin Panel
-                      </Link>
-                    )}
-                    <button onClick={() => { logout(); setMobileOpen(false); }} className="block w-full text-left px-4 py-3 rounded-lg text-sm text-red-400 hover:bg-white/5">
-                      Sign Out
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <Link to="/login" onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5">
-                      Sign In
-                    </Link>
-                    <Link to="/register" onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-brand-primary font-medium hover:bg-white/5">
-                      Get Started
-                    </Link>
-                  </>
-                )}
-              </nav>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </>
   );
 }

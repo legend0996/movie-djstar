@@ -5,8 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 
 export default function LoginPage() {
-  const [step, setStep] = useState('credentials');
-  const [form, setForm] = useState({ email: '', password: '', code: '' });
+  const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -19,25 +18,12 @@ export default function LoginPage() {
     setError('');
   }
 
-  async function handleCredentials(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
     setError('');
     try {
-      const { data } = await client.post('/auth/login/step1', { username: form.email });
-      if (data.data.requiresTwoFactor) {
-        setStep('otp');
-      } else {
-        await completeLogin();
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Invalid credentials');
-      setLoading(false);
-    }
-  }
-
-  async function completeLogin() {
-    try {
+      await client.post('/auth/login/step1', { username: form.email });
       const { data } = await client.post('/auth/login/step2', {
         username: form.email,
         password: form.password,
@@ -50,24 +36,11 @@ export default function LoginPage() {
     setLoading(false);
   }
 
-  async function handleOTP(e) {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    try {
-      const { data } = await client.post('/auth/verify-otp', { email: form.email, code: form.code });
-      login(data.data);
-      navigate(searchParams.get('redirect') || '/');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Invalid verification code');
-    }
-    setLoading(false);
-  }
-
   return (
-    <div className="min-h-screen flex bg-brand-bg">
+    <div className="min-h-screen flex bg-brand-bg bg-noise">
       {/* Left - Artwork */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-brand-primary/20 via-brand-bg to-brand-bg">
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-brand-primary/15 via-brand-bg to-brand-bg">
+        <div className="absolute inset-0 hero-gradient" />
         <div className="absolute inset-0 flex items-center justify-center p-16">
           <div className="text-center">
             <div className="w-24 h-24 bg-brand-primary rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-brand-primary/30">
@@ -119,8 +92,7 @@ export default function LoginPage() {
           <h1 className="font-heading font-bold text-3xl text-white mb-1">Sign In</h1>
           <p className="text-gray-500 mb-8">Welcome back! Enter your credentials</p>
 
-          {step === 'credentials' ? (
-            <form onSubmit={handleCredentials} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <label className="label">Email or Username</label>
                 <input
@@ -191,32 +163,6 @@ export default function LoginPage() {
                 </Link>
               </div>
             </form>
-          ) : (
-            <form onSubmit={handleOTP} className="space-y-5">
-              <p className="text-sm text-gray-400">
-                Enter the verification code sent to <span className="text-white font-medium">{form.email}</span>
-              </p>
-              <div>
-                <label className="label">Verification Code</label>
-                <input
-                  name="code"
-                  className="input-field text-center text-2xl tracking-[0.5em] font-mono"
-                  maxLength={6}
-                  value={form.code}
-                  onChange={handleChange}
-                  placeholder="000000"
-                  required
-                />
-              </div>
-              {error && <p className="text-red-400 text-sm">{error}</p>}
-              <button type="submit" disabled={loading} className="btn-primary w-full">
-                {loading ? 'Verifying...' : 'Verify Code'}
-              </button>
-              <button type="button" onClick={() => setStep('credentials')} className="btn-secondary w-full">
-                Back to Sign In
-              </button>
-            </form>
-          )}
         </motion.div>
       </div>
     </div>

@@ -1,17 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 
+const RESEND_COOLDOWN = 60;
+
 export default function VerifyEmailPage() {
   const { state } = useLocation();
   const email = state?.email || '';
-  const [code, setCode] = useState(state?.code || '');
+  const [digits, setDigits] = useState(Array(6).fill(''));
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [resending, setResending] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   const [success, setSuccess] = useState(false);
+  const inputsRef = useRef([]);
   const { user, updateUser } = useAuth();
   const navigate = useNavigate();
 
@@ -19,8 +22,48 @@ export default function VerifyEmailPage() {
     if (user?.isVerified) navigate('/');
   }, [user, navigate]);
 
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => setCooldown((c) => c - 1), 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
+  const focusNext = useCallback((i) => {
+    if (i < 5) inputsRef.current[i + 1]?.focus();
+  }, []);
+
+  const focusPrev = useCallback((i) => {
+    if (i > 0) inputsRef.current[i - 1]?.focus();
+  }, []);
+
+  function handleChange(i, value) {
+    if (!/^\d?$/.test(value)) return;
+    const next = [...digits];
+    next[i] = value;
+    setDigits(next);
+    setError('');
+    if (value) focusNext(i);
+  }
+
+  function handleKeyDown(i, e) {
+    if (e.key === 'Backspace' && !digits[i]) focusPrev(i);
+    if (e.key === 'ArrowLeft') focusPrev(i);
+    if (e.key === 'ArrowRight') focusNext(i);
+  }
+
+  function handlePaste(e) {
+    e.preventDefault();
+    const data = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    const next = Array(6).fill('');
+    for (let j = 0; j < data.length; j++) next[j] = data[j];
+    setDigits(next);
+    inputsRef.current[Math.min(data.length, 5)]?.focus();
+  }
+
   async function handleVerify(e) {
     e.preventDefault();
+    const code = digits.join('');
+    if (code.length !== 6) { setError('Please enter all 6 digits'); return; }
     setLoading(true);
     setError('');
     try {
@@ -30,23 +73,24 @@ export default function VerifyEmailPage() {
       setTimeout(() => navigate('/'), 2000);
     } catch (err) {
       setError(err.response?.data?.message || 'Verification failed');
+      inputsRef.current[0]?.focus();
     }
     setLoading(false);
   }
 
   async function handleResend() {
-    setResending(true);
+    setCooldown(RESEND_COOLDOWN);
     try {
       await client.post('/auth/resend-verification', { email });
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to resend code');
+      setCooldown(0);
     }
-    setResending(false);
   }
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-brand-bg">
+      <div className="min-h-screen flex items-center justify-center bg-brand-bg bg-noise">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center max-w-md mx-auto p-8">
           <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,8 +105,9 @@ export default function VerifyEmailPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-brand-bg">
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-brand-primary/20 via-brand-bg to-brand-bg">
+    <div className="min-h-screen flex bg-brand-bg bg-noise">
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-brand-primary/15 via-brand-bg to-brand-bg">
+        <div className="absolute inset-0 hero-gradient" />
         <div className="absolute inset-0 flex items-center justify-center p-16">
           <div className="text-center">
             <div className="w-24 h-24 bg-brand-primary rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-brand-primary/30">
@@ -95,7 +140,7 @@ export default function VerifyEmailPage() {
           </div>
 
           <h1 className="font-heading font-bold text-3xl text-white mb-1">Verify Your Email</h1>
-          <p className="text-gray-500 mb-2">
+          <p className="text-gray-500 mb-6">
             Enter the 6-digit code sent to <strong className="text-white">{email || 'your email'}</strong>
           </p>
           {state?.code && (
@@ -104,20 +149,33 @@ export default function VerifyEmailPage() {
             </p>
           )}
 
-          <form onSubmit={handleVerify} className="space-y-5">
+          <form onSubmit={handleVerify} className="space-y-6">
             <div>
-              <label className="label">Verification Code</label>
-              <input
-                className="input-field text-center text-2xl tracking-[0.5em] font-mono"
-                maxLength={6}
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder="000000"
-                required
-              />
+              <label className="label text-center w-full mb-3">Verification Code</label>
+              <div className="flex items-center justify-center gap-2 sm:gap-3" onPaste={handlePaste}>
+                {digits.map((d, i) => (
+                  <input
+                    key={i}
+                    ref={(el) => (inputsRef.current[i] = el)}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={d}
+                    onChange={(e) => handleChange(i, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(i, e)}
+                    className="w-11 h-14 sm:w-14 sm:h-16 text-center text-xl sm:text-2xl font-bold font-mono bg-white/5 border border-brand-border rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-brand-primary/50 focus:border-brand-primary transition-all duration-200"
+                    required
+                    autoFocus={i === 0}
+                  />
+                ))}
+              </div>
             </div>
-            {error && <p className="text-red-400 text-sm">{error}</p>}
-            <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
+            {error && (
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-400 text-sm text-center bg-red-500/10 rounded-lg p-3">
+                {error}
+              </motion.p>
+            )}
+            <button type="submit" disabled={loading || digits.join('').length !== 6} className="btn-primary w-full flex items-center justify-center gap-2">
               {loading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -127,8 +185,10 @@ export default function VerifyEmailPage() {
                 'Verify Email'
               )}
             </button>
-            <button type="button" onClick={handleResend} disabled={resending} className="w-full text-center text-sm text-gray-400 hover:text-white transition-colors">
-              {resending ? 'Resending...' : "Didn't receive the code? Resend"}
+            <button type="button" onClick={handleResend} disabled={cooldown > 0} className="w-full text-center text-sm text-gray-400 hover:text-white disabled:hover:text-gray-400 transition-colors disabled:cursor-not-allowed">
+              {cooldown > 0
+                ? `Resend code in ${cooldown}s`
+                : "Didn't receive the code? Resend"}
             </button>
           </form>
         </motion.div>

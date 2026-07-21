@@ -39,13 +39,16 @@ export default function HeroCarousel({ movies, isLoading }) {
 
   return (
     <div className="relative w-full h-[70vh] md:h-[85vh] overflow-hidden bg-brand-bg">
+      {/* Ambient gradient overlay */}
+      <div className="absolute inset-0 hero-gradient z-[1]" />
+
       <AnimatePresence mode="wait">
         <motion.div
           key={current}
-          initial={{ opacity: 0, scale: 1.05 }}
+          initial={{ opacity: 0, scale: 1.06 }}
           animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.7 }}
+          exit={{ opacity: 0, scale: 0.98 }}
+          transition={{ duration: 0.8, ease: 'easeInOut' }}
           className="absolute inset-0"
         >
           <img
@@ -54,8 +57,10 @@ export default function HeroCarousel({ movies, isLoading }) {
             className="w-full h-full object-cover"
           />
           {/* Gradient overlays */}
-          <div className="absolute inset-0 bg-gradient-to-t from-brand-bg via-brand-bg/40 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-brand-bg/80 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-brand-bg via-brand-bg/50 via-60% to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-brand-bg/90 via-brand-bg/30 to-transparent" />
+          {/* Bottom fade */}
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-brand-bg to-transparent" />
         </motion.div>
       </AnimatePresence>
 
@@ -71,9 +76,9 @@ export default function HeroCarousel({ movies, isLoading }) {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="max-w-2xl"
             >
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-3 mb-5">
                 {movie.genre && (
-                  <span className="text-sm font-medium text-brand-primary uppercase tracking-wider">
+                  <span className="text-xs font-semibold text-brand-primary uppercase tracking-[0.15em] bg-brand-primary/10 px-3 py-1 rounded-full">
                     {movie.genre}
                   </span>
                 )}
@@ -89,40 +94,37 @@ export default function HeroCarousel({ movies, isLoading }) {
                   </>
                 )}
                 {movie.quality && (
-                  <>
-                    <span className="text-gray-700">|</span>
-                    <span className="text-xs px-2 py-0.5 rounded border border-brand-accent/30 text-brand-accent font-semibold uppercase tracking-wider">
-                      {movie.quality}
-                    </span>
-                  </>
+                  <span className="text-[10px] px-2.5 py-1 rounded-full border border-brand-accent/25 text-brand-accent font-semibold uppercase tracking-wider bg-brand-accent/5">
+                    {movie.quality}
+                  </span>
                 )}
               </div>
 
-              <h1 className="font-heading font-black text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-white mb-4 leading-tight">
+              <h1 className="font-heading font-black text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-white mb-5 leading-[1.05] tracking-tight">
                 {movie.title}
               </h1>
 
               {movie.averageRating > 0 && (
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="flex items-center gap-1">
+                <div className="flex items-center gap-4 mb-5">
+                  <div className="flex items-center gap-1.5">
                     <svg className="w-5 h-5 text-brand-accent" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
-                    <span className="text-white font-semibold">{movie.averageRating.toFixed(1)}</span>
+                    <span className="text-white font-bold">{movie.averageRating.toFixed(1)}</span>
                   </div>
-                  <span className="text-gray-600">|</span>
+                  <span className="text-gray-600">/</span>
                   <span className="text-gray-400 text-sm">{movie.viewCount?.toLocaleString() || 0} views</span>
                 </div>
               )}
 
-              <p className="text-gray-300 text-sm md:text-base leading-relaxed line-clamp-3 mb-6 max-w-xl">
+              <p className="text-gray-300 text-sm md:text-base leading-relaxed line-clamp-3 mb-7 max-w-xl">
                 {movie.description}
               </p>
 
               <div className="flex items-center gap-3 flex-wrap">
                 <Link
-                  to={movie.isFree ? `/movies/${movie.slug}` : `/movies/${movie.slug}`}
-                  className="inline-flex items-center gap-2 bg-brand-primary hover:bg-brand-hover text-white font-heading font-semibold py-3 px-6 md:py-4 md:px-8 rounded-lg transition-all duration-200 shadow-lg shadow-brand-primary/20"
+                  to={`/movies/${movie.slug}`}
+                  className="inline-flex items-center gap-2.5 bg-brand-primary hover:bg-brand-hover text-white font-heading font-semibold py-3.5 px-7 md:py-4 md:px-8 rounded-xl transition-all duration-200 shadow-lg shadow-brand-primary/25 active:scale-[0.97]"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M8 5v14l11-7z" />
@@ -131,7 +133,7 @@ export default function HeroCarousel({ movies, isLoading }) {
                 </Link>
                 <Link
                   to={`/movies/${movie.slug}`}
-                  className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-heading font-medium py-3 px-6 md:py-4 md:px-8 rounded-lg backdrop-blur-sm transition-all duration-200"
+                  className="inline-flex items-center gap-2 bg-white/5 hover:bg-white/15 text-white font-heading font-medium py-3.5 px-7 md:py-4 md:px-8 rounded-xl backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all duration-200 active:scale-[0.97]"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -139,8 +141,8 @@ export default function HeroCarousel({ movies, isLoading }) {
                   More Info
                 </Link>
                 {movie.price > 0 && !movie.isFree && (
-                  <span className="text-sm text-gray-400">
-                    From {formatCurrency(movie.price)}
+                  <span className="text-sm text-gray-400 bg-white/5 px-4 py-2 rounded-lg backdrop-blur-sm">
+                    From <span className="text-brand-primary font-semibold">{formatCurrency(movie.price)}</span>
                   </span>
                 )}
               </div>
