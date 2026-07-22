@@ -176,4 +176,4 @@ npm run lint / lint:fix / format
 - Backend: `backend/.env` (copy from `.env.example`); validated via Joi in `backend/src/config/index.js`.
 - Frontend: `frontend/.env` with `VITE_API_URL` (defaults to `/api` proxied by Vite).
 - Docker: `docker-compose.yml` maps backend:5000, mysql:3306, redis:6379.
-- CORS: backend allows `http://localhost:3002`.
+- CORS: backend allows `http://localhost:3002` (dev) or `https://djstaroriginal.co.ke` (production).

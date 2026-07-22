@@ -37,7 +37,8 @@ This guide explains everything a frontend developer needs to build the customer-
 ### Base URL
 ```
 Development: http://localhost:5000/api
-Production:  https://yourdomain.com/api
+Production:  https://api.djstaroriginal.co.ke/api
+Frontend:    https://djstaroriginal.co.ke (static SPA)
 ```
 
 ### API Client Setup (Axios Example)

@@ -12,8 +12,8 @@ MPESA_CONSUMER_SECRET=your_consumer_secret
 MPESA_PASSKEY=your_passkey
 MPESA_SHORTCODE=your_shortcode
 MPESA_ENVIRONMENT=sandbox
-MPESA_CALLBACK_URL=https://your-domain.com/api/payments/mpesa-callback
-MPESA_TIMEOUT_URL=https://your-domain.com/api/payments/mpesa-timeout
+MPESA_CALLBACK_URL=https://api.djstaroriginal.co.ke/api/payments/mpesa-callback
+MPESA_TIMEOUT_URL=https://api.djstaroriginal.co.ke/api/payments/mpesa-timeout
 ```
 
 For local development, use ngrok:

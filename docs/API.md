@@ -4,7 +4,7 @@
 
 ```
 Development: http://localhost:5000/api
-Production: https://yourdomain.com/api
+Production: https://api.djstaroriginal.co.ke/api
 ```
 
 ## Authentication

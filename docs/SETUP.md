@@ -7,6 +7,7 @@
 - **MySQL** 8.0 or higher
 - **Cloudflare R2** account (for movie storage)
 - **Safaricom M-Pesa** Buy Goods Till Number (for payments)
+- **Domain**: Backend at `api.djstaroriginal.co.ke`
 - **SMTP Server** credentials (for emails)
 
 ## Quick Start
