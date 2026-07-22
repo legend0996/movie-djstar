@@ -36,10 +36,10 @@ describe('Stream Integration', () => {
     r2Service.getFileStream.mockResolvedValue({ Body: pt });
 
     const req = request(app)[method](url);
-    if (tokenVal) req.set('Authorization', `Bearer ${tokenVal}`);
+    if (tokenVal) {req.set('Authorization', `Bearer ${tokenVal}`);}
 
     const promise = req.catch(err => {
-      if (err && err.message === 'aborted') return { statusCode: 200, headers: {} };
+      if (err && err.message === 'aborted') {return { statusCode: 200, headers: {} };}
       throw err;
     });
 

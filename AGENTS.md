@@ -35,7 +35,7 @@ root/
 │   └── vite.config.js       # proxy /api → localhost:5000
 ├── database/
 │   ├── prisma/
-│   │   ├── schema.prisma     # 23 models, MySQL provider
+│   │   ├── schema.prisma     # 27 models, MySQL provider
 │   │   └── seed.js           # 14 movies, 4 users, 10 categories
 │   ├── migrate.js
 │   └── seed.js
@@ -150,6 +150,10 @@ npm run lint / lint:fix / format
 ## Known API Fixes (CRITICAL — do not regress)
 1. **Movie slug route**: `GET /api/movies/slug/:slug` (NOT `/api/movies/:slug`). `:id` route is separate.
 2. **useFetch(args)**: Signature is `useFetch(key, url)` — first arg is the query key, second is the URL string.
+3. **parseInt on route params**: Always use `parseInt(req.params.id, 10)` in controllers — Prisma expects integers, not strings.
+4. **Search uses `contains`**: Movie search uses Prisma `contains` (LIKE), not MySQL FULLTEXT `search`. Repository: `movieRepository.js`.
+5. **M-Pesa ResultCode**: Safaricom returns `ResultCode` as a string in `Body.stkCallback.ResultCode`. Always convert with `Number()` before comparison.
+6. **M-Pesa date format**: `TransactionDate` from Safaricom is `YYYYMMDDHHmmss`. Use `parseMpesaDate()` helper in `paymentService.js`.
 
 ## Database
 - **Provider**: MySQL 8 via Prisma ORM, schema at `database/prisma/schema.prisma`.
@@ -160,7 +164,7 @@ npm run lint / lint:fix / format
 ## Seed Data
 - **4 users**: dev@djstarmovies.com / Admin@123456 (developer), owner@djstarmovies.com / Owner@123456 (movie_owner), demo@djstarmovies.com / Demo@123456 (user), user@djstarmovies.com / User@123456 (unverified user).
 - **10 categories**: Action, Comedy, Drama, Romance, Thriller, Horror, Documentary, Animation, Science Fiction, Series.
-- **14 movies** with posters (picsum.photos) and video (Big Buck Bunny sample).
+- **14 movies** with posters (picsum.photos) and video (Big Buck Bunny sample). All priced at KES 20.00, no free movies.
 
 ## Test Setup
 - **Config**: `jest.config.js` — `setupFiles: ['./src/tests/setup.js']`, matches `**/src/tests/**/*.test.js`.

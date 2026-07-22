@@ -340,7 +340,7 @@ Authentication required.
     "lastLoginAt": "2024-01-01T00:00:00.000Z",
     "libraryCount": 5,
     "totalPurchases": 5,
-    "totalSpent": 750.00,
+    "totalSpent": 100.00,
     "createdAt": "2024-01-01T00:00:00.000Z"
   }
 }
@@ -383,7 +383,7 @@ Public. Optional authentication (for library status).
     "castMembers": ["Actor 1", "Actor 2"],
     "posterUrl": "https://pub-xxx.r2.dev/posters/uuid-poster.jpg",
     "trailerUrl": "movies/uuid-trailer.mp4",
-    "price": 150.00,
+    "price": 20.00,
     "isFree": false,
     "isFeatured": true,
     "status": "published",
@@ -413,7 +413,7 @@ Public. Optional authentication. Paginated.
 | page | int | 1 | Page number |
 | limit | int | 20 | Items per page (max 100) |
 | category | int | - | Filter by category ID |
-| search | string | - | Full-text search term |
+| search | string | - | Search term (uses Prisma `contains`, LIKE-based) |
 | sort | string | newest | `newest`, `oldest`, `popular`, `price_asc`, `price_desc`, `title` |
 | featured | bool | - | Filter featured only |
 
@@ -474,7 +474,7 @@ Authentication required. Roles: movie_owner, developer.
   "quality": "HD",
   "ageRating": "PG-13",
   "director": "Director",
-  "price": 150.00,
+  "price": 20.00,
   "status": "published",
   "isFeatured": false
 }
@@ -615,7 +615,7 @@ Authentication required.
     "orderId": 1,
     "transactionId": 1,
     "orderNumber": "DJ-XXXX-XXXX",
-    "amount": 150.00,
+    "amount": 20.00,
     "merchantRequestID": "abc-123",
     "checkoutRequestID": "ws_CO_0401202410000000",
     "responseDescription": "Success. Request accepted for processing",
@@ -728,7 +728,7 @@ Authentication required. Roles: movie_owner, developer.
   "success": true,
   "data": {
     "movies": { "total": 50, "published": 40, "draft": 8, "hidden": 2 },
-    "sales": { "today": 1500, "week": 8500, "month": 35000, "lifetime": 500000 },
+    "sales": { "today": 300, "week": 1400, "month": 6000, "lifetime": 80000 },
     "customers": { "total": 200, "newThisMonth": 25 },
     "streamsThisMonth": 1500,
     "downloadsThisMonth": 300,
@@ -802,10 +802,10 @@ Authentication required. Role: developer only.
       "byRole": [{ "name": "User", "slug": "user", "count": 470 }]
     },
     "movies": { "total": 50, "published": 40 },
-    "orders": { "total": 1000, "paid": 800, "totalRevenue": 120000 },
-    "commissions": { "developerCommission": 48000, "ownerEarnings": 72000, "commissionRate": 40 },
+    "orders": { "total": 1000, "paid": 800, "totalRevenue": 16000 },
+    "commissions": { "developerCommission": 6400, "ownerEarnings": 9600, "commissionRate": 40 },
     "storage": { "fileCount": 60, "totalSizeBytes": 10737418240 },
-    "activity": { "totalStreams": 5000, "totalDownloads": 1000, "newUsersToday": 10, "newOrdersToday": 5, "todayRevenue": 7500 },
+    "activity": { "totalStreams": 5000, "totalDownloads": 1000, "newUsersToday": 10, "newOrdersToday": 5, "todayRevenue": 1000 },
     "recentErrors": [...]
   }
 }
@@ -857,7 +857,7 @@ Authentication required. Role: developer only.
   "success": true,
   "data": {
     "userGrowth": [{ "date": "2024-01-01", "count": 5 }, ...],
-    "revenueTrend": [{ "date": "2024-01-01", "revenue": 1500, "orders": 10 }, ...],
+    "revenueTrend": [{ "date": "2024-01-01", "revenue": 200, "orders": 10 }, ...],
     "moviesByCategory": [{ "name": "Action", "slug": "action", "count": 15 }, ...],
     "purchaseTrend": [{ "date": "2024-01-01", "purchases": 8 }, ...],
     "period": { "start": "2024-01-01T00:00:00.000Z", "end": "2024-01-31T00:00:00.000Z" }
@@ -877,9 +877,9 @@ Authentication required. Role: developer only.
 {
   "success": true,
   "data": {
-    "daily": [{ "date": "2024-01-01", "revenue": 1500, "transactions": 10 }, ...],
-    "summary": { "totalOrders": 300, "totalRevenue": 45000, "avgOrderValue": 150 },
-    "topMovies": [{ "title": "Movie A", "slug": "movie-a", "sales": 50, "revenue": 7500 }, ...],
+    "daily": [{ "date": "2024-01-01", "revenue": 200, "transactions": 10 }, ...],
+    "summary": { "totalOrders": 300, "totalRevenue": 6000, "avgOrderValue": 20 },
+    "topMovies": [{ "title": "Movie A", "slug": "movie-a", "sales": 50, "revenue": 1000 }, ...],
     "period": { "start": "2024-01-01T00:00:00.000Z", "end": "2024-01-31T00:00:00.000Z" }
   }
 }

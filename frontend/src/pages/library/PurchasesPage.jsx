@@ -59,7 +59,7 @@ export default function PurchasesPage() {
                       <p className="text-sm text-gray-500">{formatDate(purchase.createdAt)}</p>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className="font-bold text-brand-primary">{formatCurrency(purchase.amount)}</p>
+                      <p className="font-bold text-brand-primary">{formatCurrency(purchase.totalAmount || purchase.amount)}</p>
                       <span className={getStatusBadge(purchase.status)}>{purchase.status}</span>
                     </div>
                   </motion.div>

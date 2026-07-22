@@ -199,9 +199,9 @@ const movieRepository = {
 
     if (query) {
       where.OR = [
-        { title: { search: query } },
-        { description: { search: query } },
-        { shortDescription: { search: query } },
+        { title: { contains: query } },
+        { description: { contains: query } },
+        { shortDescription: { contains: query } },
       ];
     }
     if (category) {

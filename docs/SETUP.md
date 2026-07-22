@@ -184,11 +184,13 @@ server {
 ### "M-Pesa callback not received"
 - Ensure `MPESA_CALLBACK_URL` is publicly accessible
 - The URL must use HTTPS (Safaricom requirement)
-- Test with ngrok for local development:
+- Test with ngrok for local development (must restart ngrok if connection drops):
   ```bash
   ngrok http 5000
   ```
   Then set `MPESA_CALLBACK_URL=https://your-ngrok.ngrok.io/api/payments/mpesa-callback`
+- If callback was missed, transactions stay in `processing` state. Run `node scripts/fixStuckTransactions.js` to query M-Pesa and recover.
+- **ResultCode arrives as a string** from Safaricom. The backend handles this with `Number()` conversion, but if modifying payment code, never compare with `=== 0` directly.
 
 ### "Email not sending"
 - Verify SMTP credentials in `.env`

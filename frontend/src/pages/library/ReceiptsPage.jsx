@@ -53,14 +53,13 @@ export default function ReceiptsPage() {
                   <motion.div key={receipt.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-brand-card rounded-xl border border-brand-border p-5 hover:border-brand-primary/30 transition-all duration-200">
                     <div className="flex items-center justify-between mb-3">
                       <div>
-                        <p className="font-semibold text-white">Receipt #{receipt.receiptNumber || receipt.id.slice(0, 8)}</p>
+                        <p className="font-semibold text-white">Receipt #{receipt.receiptNumber}</p>
                         <p className="text-sm text-gray-500">{formatDate(receipt.createdAt)}</p>
                       </div>
-                      <span className={getStatusBadge(receipt.status)}>{receipt.status}</span>
                     </div>
                     <div className="flex justify-between text-sm pt-3 border-t border-brand-border">
-                      <span className="text-gray-400">{receipt.description || 'Movie purchase'}</span>
-                      <span className="font-bold text-white">{formatCurrency(receipt.amount)}</span>
+                      <span className="text-gray-400">{receipt.receiptData?.movieTitle || 'Movie purchase'}</span>
+                      <span className="font-bold text-white">{formatCurrency(receipt.receiptData?.amount)}</span>
                     </div>
                   </motion.div>
                 ))}

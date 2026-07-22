@@ -221,7 +221,7 @@ GET /movies/slug/:slug
 - Cover image / poster
 - Title, description, duration, release year
 - Category, language, quality
-- Price (formatted as `KES 150.00`)
+- Price (formatted as `KES 20`)
 - **Buy Now** button (if not owned)
 - **Watch / Download** buttons (if owned)
 - Trailer player (public access)

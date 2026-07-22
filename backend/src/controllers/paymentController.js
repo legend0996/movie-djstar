@@ -57,7 +57,9 @@ const paymentController = {
 
   async getOrderDetails(req, res, next) {
     try {
-      const order = await paymentService.getOrderDetails(req.params.id, req.user.id, req.user.role);
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {return response.error(res, 'Invalid order ID', 400, 'VALIDATION_ERROR');}
+      const order = await paymentService.getOrderDetails(id, req.user.id, req.user.role);
       return response.success(res, order);
     } catch (err) {
       next(err);

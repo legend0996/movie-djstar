@@ -20,7 +20,9 @@ const notificationController = {
 
   async markAsRead(req, res, next) {
     try {
-      await notificationService.markAsRead(req.params.id, req.user.id);
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {return response.error(res, 'Invalid notification ID', 400, 'VALIDATION_ERROR');}
+      await notificationService.markAsRead(id, req.user.id);
       return response.success(res, null, 'Notification marked as read');
     } catch (err) {
       next(err);

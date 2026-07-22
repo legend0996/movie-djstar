@@ -254,7 +254,7 @@ const mpesaService = {
     try {
       return crypto.timingSafeEqual(
         Buffer.from(expectedSignature, 'hex'),
-        Buffer.from(signature, 'hex')
+        Buffer.from(signature, 'hex'),
       );
     } catch (err) {
       return false;

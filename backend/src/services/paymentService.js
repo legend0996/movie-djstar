@@ -23,6 +23,18 @@ const { MOVIE_STATUS, ORDER_STATUS, TRANSACTION_STATUS } = require('../constants
 const logger = require('../utils/logger');
 const { paymentLogger } = require('../utils/logger');
 
+function parseMpesaDate(dateValue) {
+  if (!dateValue) {return new Date();}
+  const str = String(dateValue).replace(/\D/g, '');
+  if (str.length === 14) {
+    const y = str.slice(0, 4), M = str.slice(4, 6) - 1, d = str.slice(6, 8),
+      h = str.slice(8, 10), m = str.slice(10, 12), s = str.slice(12, 14);
+    return new Date(y, M, d, h, m, s);
+  }
+  const parsed = new Date(dateValue);
+  return isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
 const paymentService = {
   async initiatePurchase(userId, movieId, phoneNumber) {
     const movie = await movieRepository.findById(movieId);
@@ -143,8 +155,8 @@ const paymentService = {
       '8': 'System error - contact administrator',
     };
 
-    const errorMessage = mpesaErrorMap[stkResponse.ResponseCode] || 
-                         stkResponse.ResponseDescription || 
+    const errorMessage = mpesaErrorMap[stkResponse.ResponseCode] ||
+                         stkResponse.ResponseDescription ||
                          'M-Pesa payment initiation failed';
 
     await transactionRepository.update(transactionId, {
@@ -199,13 +211,11 @@ const paymentService = {
       resultDescription: callback.resultDesc,
     });
 
-    if (callback.resultCode === 0) {
+    if (Number(callback.resultCode) === 0) {
       await transactionRepository.update(transaction.id, {
         status: TRANSACTION_STATUS.SUCCESS,
         mpesaReceipt: callback.mpesaReceipt,
-        transactionDate: callback.transactionDate
-          ? new Date(callback.transactionDate.toString())
-          : new Date(),
+        transactionDate: parseMpesaDate(callback.transactionDate),
       });
 
       await orderRepository.updateStatus(transaction.orderId, {
@@ -354,9 +364,20 @@ const paymentService = {
     if (transaction.status === 'processing') {
       try {
         const result = await mpesaService.querySTKStatus(checkoutRequestId);
-        if (result.ResultCode !== undefined) {
-          if (result.ResultCode === 0) {
+        const rawCode = result.ResultCode;
+        if (rawCode !== undefined && rawCode !== null) {
+          const resultCode = Number(rawCode);
+          if (resultCode === 0) {
             return { status: TRANSACTION_STATUS.SUCCESS, message: 'Payment successful' };
+          }
+          const stillProcessingCodes = [1, 2, 7, 12, 1037, 2001];
+          const desc = (result.ResultDesc || '').toLowerCase();
+          const isStillProcessing = stillProcessingCodes.includes(resultCode) ||
+            desc.includes('still under processing') ||
+            desc.includes('still processing') ||
+            desc.includes('pending');
+          if (isStillProcessing) {
+            return { status: 'processing', message: result.ResultDesc || 'Transaction is still being processed' };
           }
           return { status: TRANSACTION_STATUS.FAILED, message: result.ResultDesc || 'Payment failed' };
         }

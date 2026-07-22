@@ -31,12 +31,12 @@ describe('authService.register', () => {
     jest.clearAllMocks();
   });
 
-    it('creates user and returns userId', async () => {
-      userRepository.findByUsername.mockResolvedValue(null);
-      userRepository.findByEmail.mockResolvedValue(null);
-      userRepository.create.mockResolvedValue(42);
-      const roleRepository = require('../../../repositories/roleRepository');
-      roleRepository.findBySlug.mockResolvedValue({ id: 1, slug: 'user', name: 'User' });
+  it('creates user and returns userId', async () => {
+    userRepository.findByUsername.mockResolvedValue(null);
+    userRepository.findByEmail.mockResolvedValue(null);
+    userRepository.create.mockResolvedValue(42);
+    const roleRepository = require('../../../repositories/roleRepository');
+    roleRepository.findBySlug.mockResolvedValue({ id: 1, slug: 'user', name: 'User' });
 
     const result = await authService.register(registerData);
 

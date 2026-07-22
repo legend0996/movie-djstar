@@ -74,7 +74,9 @@ const adminController = {
 
   async updateUserStatus(req, res, next) {
     try {
-      const result = await adminService.updateUserStatus(req.params.id, req.body.status);
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {return response.error(res, 'Invalid user ID', 400, 'VALIDATION_ERROR');}
+      const result = await adminService.updateUserStatus(id, req.body.status);
       return response.success(res, result);
     } catch (err) {
       next(err);
@@ -103,7 +105,9 @@ const adminController = {
 
   async updateTicketStatus(req, res, next) {
     try {
-      const result = await supportService.updateTicketStatus(req.params.id, req.body.status, req.user.id);
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {return response.error(res, 'Invalid ticket ID', 400, 'VALIDATION_ERROR');}
+      const result = await supportService.updateTicketStatus(id, req.body.status, req.user.id);
       return response.success(res, result);
     } catch (err) {
       next(err);
@@ -112,7 +116,9 @@ const adminController = {
 
   async replyToTicket(req, res, next) {
     try {
-      const result = await supportService.addReply(req.params.id, req.user.id, req.body.message, true);
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {return response.error(res, 'Invalid ticket ID', 400, 'VALIDATION_ERROR');}
+      const result = await supportService.addReply(id, req.user.id, req.body.message, true);
       return response.success(res, result, 'Reply added successfully');
     } catch (err) {
       next(err);

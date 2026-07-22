@@ -1,10 +1,32 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { formatCurrency, getImageUrl } from '../utils/format';
+import client from '../api/client';
 
-export default function MovieCard({ movie, index = 0 }) {
+export default function MovieCard({ movie, index = 0, isOwned = false }) {
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = useCallback(async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDownloading(true);
+    try {
+      const { data } = await client.get(`/stream/signed-url/${movie.id}`);
+      const a = document.createElement('a');
+      a.href = data.data.url;
+      a.download = 'movie.mp4';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (err) {
+      const { toast } = await import('./Toast');
+      toast(err.response?.data?.message || 'Download failed', 'error');
+    } finally {
+      setDownloading(false);
+    }
+  }, [movie.id]);
 
   return (
     <motion.div
@@ -33,27 +55,54 @@ export default function MovieCard({ movie, index = 0 }) {
           {/* Hover overlay - always visible on mobile/touch */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-brand-primary/10 to-transparent opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-400 flex flex-col items-center justify-end p-4 pb-6">
             <div className="flex gap-2 w-full translate-y-4 group-hover:translate-y-0 transition-transform duration-400">
-              <span
-                className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-all duration-200 ${
-                  movie.isFree
-                    ? 'bg-white/90 text-black hover:bg-white'
-                    : 'bg-brand-primary text-white hover:bg-brand-hover shadow-lg shadow-brand-primary/20'
-                }`}
-              >
-                {movie.isFree ? 'Watch Free' : 'Buy Now'}
-              </span>
-              <button
-                className="p-2.5 rounded-xl bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 transition-all duration-200 hover:scale-105 active:scale-95"
-                aria-label="Add to wishlist"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-              </button>
+              {isOwned ? (
+                <>
+                  <Link
+                    to={`/watch/${movie.id}`}
+                    className="flex-1 flex items-center justify-center gap-1.5 text-sm font-semibold py-2.5 rounded-xl bg-brand-primary text-white hover:bg-brand-hover shadow-lg shadow-brand-primary/20 transition-all duration-200"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                    Watch
+                  </Link>
+                  <button
+                    onClick={handleDownload}
+                    disabled={downloading}
+                    className="flex-1 flex items-center justify-center gap-1.5 text-sm font-semibold py-2.5 rounded-xl bg-white/15 text-white hover:bg-white/25 transition-all duration-200"
+                  >
+                    <svg className={`w-4 h-4 ${downloading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    {downloading ? 'Downloading...' : 'Download'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span
+                    className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-all duration-200 ${
+                      movie.isFree
+                        ? 'bg-white/90 text-black hover:bg-white'
+                        : 'bg-brand-primary text-white hover:bg-brand-hover shadow-lg shadow-brand-primary/20'
+                    }`}
+                  >
+                    {movie.isFree ? 'Watch Free' : 'Buy Now'}
+                  </span>
+                  <button
+                    className="p-2.5 rounded-xl bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 transition-all duration-200 hover:scale-105 active:scale-95"
+                    aria-label="Add to wishlist"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                  </button>
+                </>
+              )}
             </div>
           </div>
 

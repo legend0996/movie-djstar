@@ -25,7 +25,9 @@ const movieController = {
 
   async getById(req, res, next) {
     try {
-      const movie = await movieService.getMovie(req.params.id, req.user?.id, req.user?.role);
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {return response.error(res, 'Invalid movie ID', 400, 'VALIDATION_ERROR');}
+      const movie = await movieService.getMovie(id, req.user?.id, req.user?.role);
       return response.success(res, movie);
     } catch (err) {
       next(err);
@@ -52,7 +54,9 @@ const movieController = {
 
   async update(req, res, next) {
     try {
-      const movie = await movieService.update(req.params.id, req.body, req.user.id);
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {return response.error(res, 'Invalid movie ID', 400, 'VALIDATION_ERROR');}
+      const movie = await movieService.update(id, req.body, req.user.id);
       return response.success(res, movie, 'Movie updated successfully');
     } catch (err) {
       next(err);
@@ -61,7 +65,9 @@ const movieController = {
 
   async delete(req, res, next) {
     try {
-      await movieService.delete(req.params.id, req.user.id);
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {return response.error(res, 'Invalid movie ID', 400, 'VALIDATION_ERROR');}
+      await movieService.delete(id, req.user.id);
       return response.success(res, null, 'Movie deleted successfully');
     } catch (err) {
       next(err);
@@ -127,7 +133,9 @@ const movieController = {
 
   async updateCategory(req, res, next) {
     try {
-      const category = await movieService.updateCategory(req.params.id, req.body);
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {return response.error(res, 'Invalid category ID', 400, 'VALIDATION_ERROR');}
+      const category = await movieService.updateCategory(id, req.body);
       return response.success(res, category, 'Category updated successfully');
     } catch (err) {
       next(err);
@@ -136,7 +144,9 @@ const movieController = {
 
   async deleteCategory(req, res, next) {
     try {
-      await movieService.deleteCategory(req.params.id);
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {return response.error(res, 'Invalid category ID', 400, 'VALIDATION_ERROR');}
+      await movieService.deleteCategory(id);
       return response.success(res, null, 'Category deleted successfully');
     } catch (err) {
       next(err);

@@ -2,7 +2,7 @@
 
 ## Overview
 
-MySQL 8+ relational database with 25 tables, 7 enums, and full-text search support. Managed via Prisma ORM.
+MySQL 8+ relational database with 26 tables, 9 enums, and full-text search support. Managed via Prisma ORM (27 Prisma models).
 
 ## Schema
 
@@ -122,6 +122,7 @@ Seeded data:
 - 11 system configurations
 - 10 categories
 - 4 user accounts (developer, movie_owner, demo, test)
+- 14 movies (all priced at KES 20.00, no free movies)
 
 ## Backup
 

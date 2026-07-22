@@ -25,7 +25,9 @@ const supportController = {
 
   async getTicketDetails(req, res, next) {
     try {
-      const ticket = await supportService.getTicket(req.params.id, req.user.id);
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {return response.error(res, 'Invalid ticket ID', 400, 'VALIDATION_ERROR');}
+      const ticket = await supportService.getTicket(id, req.user.id);
       return response.success(res, ticket);
     } catch (err) {
       next(err);
@@ -34,7 +36,9 @@ const supportController = {
 
   async replyToTicket(req, res, next) {
     try {
-      const result = await supportService.addReply(req.params.id, req.user.id, req.body.message, false);
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {return response.error(res, 'Invalid ticket ID', 400, 'VALIDATION_ERROR');}
+      const result = await supportService.addReply(id, req.user.id, req.body.message, false);
       return response.success(res, result, 'Reply added successfully');
     } catch (err) {
       next(err);
