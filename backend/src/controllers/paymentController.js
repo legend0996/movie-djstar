@@ -1,5 +1,4 @@
 const paymentService = require('../services/paymentService');
-const orderRepository = require('../repositories/orderRepository');
 const receiptRepository = require('../repositories/receiptRepository');
 const response = require('../utils/response');
 const { paginate } = require('../utils/helpers');
@@ -49,9 +48,8 @@ const paymentController = {
   async getPurchaseHistory(req, res, next) {
     try {
       const { page: p, limit: l } = req.query;
-      const { page, limit } = paginate(p, l);
-      const result = await orderRepository.findByUser(req.user.id, { page, limit });
-      return response.paginated(res, result.rows, { page, limit, total: result.total });
+      const result = await paymentService.getPurchaseHistory(req.user.id, { page: p, limit: l });
+      return response.paginated(res, result.rows, { page: result.page, limit: result.limit, total: result.total });
     } catch (err) {
       next(err);
     }
@@ -59,13 +57,7 @@ const paymentController = {
 
   async getOrderDetails(req, res, next) {
     try {
-      const order = await orderRepository.findById(req.params.id);
-      if (!order) {
-        return response.error(res, 'Order not found', 404, 'NOT_FOUND');
-      }
-      if (order.userId !== req.user.id && req.user.role !== 'developer') {
-        return response.error(res, 'Forbidden', 403, 'FORBIDDEN');
-      }
+      const order = await paymentService.getOrderDetails(req.params.id, req.user.id, req.user.role);
       return response.success(res, order);
     } catch (err) {
       next(err);

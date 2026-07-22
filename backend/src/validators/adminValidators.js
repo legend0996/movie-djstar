@@ -138,8 +138,32 @@ const adminTicketQuerySchema = Joi.object({
     }),
 }).options({ abortEarly: false, stripUnknown: true });
 
+const updateUserSchema = Joi.object({
+  firstName: Joi.string().trim().max(100).optional().messages({
+    'string.max': 'First name must not exceed 100 characters',
+  }),
+  lastName: Joi.string().trim().max(100).optional().messages({
+    'string.max': 'Last name must not exceed 100 characters',
+  }),
+  phone: Joi.string().trim().optional(),
+  avatarUrl: Joi.string().uri().max(500).optional().allow('', null).messages({
+    'string.uri': 'Avatar URL must be a valid URL',
+    'string.max': 'Avatar URL must not exceed 500 characters',
+  }),
+  email: Joi.string().email().optional().messages({
+    'string.email': 'Email must be a valid email address',
+  }),
+  status: Joi.string()
+    .valid('active', 'unverified', 'suspended', 'disabled')
+    .optional()
+    .messages({
+      'any.only': 'Status must be one of: active, unverified, suspended, disabled',
+    }),
+}).min(1).options({ abortEarly: false, stripUnknown: true });
+
 module.exports = {
   updateUserStatusSchema,
+  updateUserSchema,
   paginationSchema,
   dateRangeSchema,
   auditLogQuerySchema,

@@ -7,6 +7,7 @@ const movieRepository = require('../../repositories/movieRepository');
 const libraryRepository = require('../../repositories/libraryRepository');
 const orderRepository = require('../../repositories/orderRepository');
 const transactionRepository = require('../../repositories/transactionRepository');
+const receiptRepository = require('../../repositories/receiptRepository');
 const userRepository = require('../../repositories/userRepository');
 const mpesaService = require('../../services/mpesaService');
 const { createMockUser, createMockMovie, createMockToken } = require('../helpers/testFactory');
@@ -133,10 +134,11 @@ describe('Payments Integration', () => {
 
   describe('GET /api/payments/receipts', () => {
     it('returns 200 with list', async () => {
-      const db = require('../../config/database');
-      db.execute
-        .mockResolvedValueOnce([[{ id: 1, receipt_number: 'RCT-001', order_number: 'DJ-001' }]])
-        .mockResolvedValueOnce([[{ total: 1 }]]);
+      const receiptRepository = require('../../repositories/receiptRepository');
+      receiptRepository.findByUser.mockResolvedValue({
+        rows: [{ id: 1, receipt_number: 'RCT-001', order_number: 'DJ-001' }],
+        total: 1,
+      });
 
       const res = await request(app)
         .get('/api/payments/receipts')

@@ -5,7 +5,7 @@ const movieRepository = require('../repositories/movieRepository');
 const categoryRepository = require('../repositories/categoryRepository');
 const orderRepository = require('../repositories/orderRepository');
 const transactionRepository = require('../repositories/transactionRepository');
-const r2Service = require('./r2Service');
+const movieService = require('./movieService');
 const { logActivity } = require('../middleware/activityLogger');
 const { NotFoundError, ValidationError } = require('../utils/errors');
 const { USER_STATUS } = require('../constants');
@@ -194,62 +194,6 @@ const adminService = {
     };
   },
 
-  async uploadMoviePoster(file, movieId) {
-    const movie = await movieRepository.findById(movieId);
-    if (!movie) {throw new NotFoundError('Movie not found');}
-
-    const result = await r2Service.uploadFile(
-      file.buffer,
-      `poster-${Date.now()}-${file.originalname}`,
-      file.mimetype,
-      'posters',
-    );
-
-    const publicUrl = await r2Service.getPublicUrl(result.key);
-    const url = publicUrl || result.key;
-    await movieRepository.update(movieId, { poster_url: url });
-
-    return { url, key: result.key };
-  },
-
-  async uploadMovieTrailer(file, movieId) {
-    const movie = await movieRepository.findById(movieId);
-    if (!movie) {throw new NotFoundError('Movie not found');}
-
-    const result = await r2Service.uploadFile(
-      file.buffer,
-      `trailer-${Date.now()}-${file.originalname}`,
-      file.mimetype,
-      'trailers',
-    );
-
-    const publicUrl = await r2Service.getPublicUrl(result.key);
-    const url = publicUrl || result.key;
-    await movieRepository.update(movieId, { trailer_url: url });
-
-    return { url, key: result.key };
-  },
-
-  async uploadMovieFile(file, movieId) {
-    const movie = await movieRepository.findById(movieId);
-    if (!movie) {throw new NotFoundError('Movie not found');}
-
-    const result = await r2Service.uploadFile(
-      file.buffer,
-      `movie-${Date.now()}-${file.originalname}`,
-      file.mimetype || 'video/mp4',
-      'movies',
-    );
-
-    await movieRepository.update(movieId, {
-      movie_url: result.key,
-      movie_size: file.size,
-      movie_format: file.originalname.split('.').pop(),
-    });
-
-    return { key: result.key };
-  },
-
   async getAuditLogs({ page = 1, limit = 50, action, userId, entityType, startDate, endDate } = {}) {
     const offset = (page - 1) * limit;
     let where = 'WHERE 1=1';
@@ -420,6 +364,14 @@ const adminService = {
     );
 
     return { daily, summary: summary[0], topMovies, period: { start, end } };
+  },
+
+  async updateUser(userId, data) {
+    const user = await userRepository.findById(userId);
+    if (!user) {throw new NotFoundError('User not found');}
+
+    await userRepository.update(userId, data);
+    return userRepository.findById(userId);
   },
 };
 

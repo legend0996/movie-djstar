@@ -1,4 +1,5 @@
 const adminService = require('../services/adminService');
+const movieService = require('../services/movieService');
 const supportService = require('../services/supportService');
 const response = require('../utils/response');
 const { paginate } = require('../utils/helpers');
@@ -24,7 +25,7 @@ const adminController = {
 
   async uploadPoster(req, res, next) {
     try {
-      const result = await adminService.uploadMoviePoster(req.file, req.params.id);
+      const result = await movieService.uploadPoster(req.file, parseInt(req.params.id));
       return response.success(res, result, 'Poster uploaded successfully');
     } catch (err) {
       next(err);
@@ -33,7 +34,7 @@ const adminController = {
 
   async uploadTrailer(req, res, next) {
     try {
-      const result = await adminService.uploadMovieTrailer(req.file, req.params.id);
+      const result = await movieService.uploadTrailer(req.file, parseInt(req.params.id));
       return response.success(res, result, 'Trailer uploaded successfully');
     } catch (err) {
       next(err);
@@ -42,7 +43,7 @@ const adminController = {
 
   async uploadMovieFile(req, res, next) {
     try {
-      const result = await adminService.uploadMovieFile(req.file, req.params.id);
+      const result = await movieService.uploadMovieFile(req.file, parseInt(req.params.id));
       return response.success(res, { key: result.key }, 'Movie file uploaded successfully');
     } catch (err) {
       next(err);
@@ -82,8 +83,7 @@ const adminController = {
 
   async updateUser(req, res, next) {
     try {
-      const userRepository = require('../repositories/userRepository');
-      const result = await userRepository.update(Number(req.params.id), req.body);
+      const result = await adminService.updateUser(Number(req.params.id), req.body);
       return response.success(res, result, 'User updated');
     } catch (err) {
       next(err);

@@ -2,6 +2,7 @@ const db = require('../config/database');
 const movieRepository = require('../repositories/movieRepository');
 const categoryRepository = require('../repositories/categoryRepository');
 const libraryRepository = require('../repositories/libraryRepository');
+const userRepository = require('../repositories/userRepository');
 const reviewService = require('./reviewService');
 const r2Service = require('./r2Service');
 const { logActivity } = require('../middleware/activityLogger');
@@ -31,8 +32,8 @@ const movieService = {
     const movie = await movieRepository.findById(movieId);
     if (!movie) {throw new NotFoundError('Movie not found');}
 
-    if (movie.created_by && movie.created_by !== userId) {
-      const user = await require('../repositories/userRepository').findById(userId);
+    if (movie.createdBy && movie.createdBy !== userId) {
+      const user = await userRepository.findById(userId);
       if (!user || (user.role?.slug !== ROLES.DEVELOPER && user.role?.slug !== ROLES.MOVIE_OWNER)) {
         throw new ForbiddenError('You do not have permission to update this movie');
       }

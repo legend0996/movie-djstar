@@ -22,11 +22,11 @@ const MOVIE_STATUS = Object.freeze({
 
 const ORDER_STATUS = Object.freeze({
   PENDING: 'pending',
-  CONFIRMED: 'confirmed',
   PROCESSING: 'processing',
   COMPLETED: 'completed',
-  CANCELLED: 'cancelled',
+  FAILED: 'failed',
   REFUNDED: 'refunded',
+  PARTIALLY_REFUNDED: 'partially_refunded',
 });
 
 const PAYMENT_STATUS = Object.freeze({
@@ -47,15 +47,19 @@ const TICKET_PRIORITY = Object.freeze({
 const TICKET_STATUS = Object.freeze({
   OPEN: 'open',
   IN_PROGRESS: 'in_progress',
+  WAITING_ON_CUSTOMER: 'waiting_on_customer',
   RESOLVED: 'resolved',
   CLOSED: 'closed',
 });
 
 const TRANSACTION_STATUS = Object.freeze({
   PENDING: 'pending',
+  PROCESSING: 'processing',
   SUCCESS: 'successful',
   FAILED: 'failed',
   CANCELLED: 'cancelled',
+  EXPIRED: 'expired',
+  REVERSED: 'reversed',
 });
 
 const VERIFICATION_TYPE = Object.freeze({

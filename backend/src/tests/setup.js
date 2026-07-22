@@ -56,6 +56,8 @@ jest.mock('../repositories/transactionRepository');
 jest.mock('../repositories/notificationRepository');
 jest.mock('../repositories/supportRepository');
 jest.mock('../repositories/roleRepository');
+jest.mock('../repositories/receiptRepository');
+jest.mock('../repositories/revenueRepository');
 jest.mock('../repositories/reviewRepository', () => ({
   findById: jest.fn(),
   findByUserAndMovie: jest.fn(),

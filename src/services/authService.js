@@ -2,11 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const config = require('../config');
-const db = require('../config/database');
 const userRepository = require('../repositories/userRepository');
-const roleRepository = require('../repositories/roleRepository');
-const libraryRepository = require('../repositories/libraryRepository');
-const notificationService = require('./notificationService');
 const emailService = require('./emailService');
 const { logActivity } = require('../middleware/activityLogger');
 const { generateVerificationCode, parsePhoneNumber } = require('../utils/helpers');
@@ -18,8 +14,8 @@ const {
   ValidationError,
   TooManyRequestsError,
 } = require('../utils/errors');
-const { ROLES, USER_STATUS, VERIFICATION_TYPE } = require('../constants');
 const logger = require('../utils/logger');
+const db = require('../config/database');
 
 const authService = {
   async register({ username, email, phone, password, firstName, lastName }) {
@@ -41,8 +37,8 @@ const authService = {
       }
     }
 
-    const userRole = await roleRepository.findBySlug(ROLES.USER);
-    if (!userRole) {
+    const [userRole] = await db.execute(`SELECT id FROM roles WHERE slug = 'user'`);
+    if (!userRole.length) {
       throw new Error('Default user role not found');
     }
 
@@ -54,10 +50,10 @@ const authService = {
       passwordHash,
       firstName,
       lastName,
-      roleId: userRole.id,
+      roleId: userRole[0].id,
     });
 
-    const verificationCode = await this.generateVerificationCode(userId, VERIFICATION_TYPE.EMAIL);
+    const verificationCode = await this.generateVerificationCode(userId, 'email_verification');
 
     try {
       await emailService.sendVerificationCode(email, verificationCode, username);
@@ -67,59 +63,53 @@ const authService = {
 
     await logActivity(userId, 'registration', 'user', userId, { username, email });
 
-    const result = { userId };
-    if (config.isDev) {
-      result.verificationCode = verificationCode;
-    }
-    return result;
+    return { userId };
   },
 
-  async loginStep1(identifier) {
-    let user = await userRepository.findByUsername(identifier);
-    if (!user) {user = await userRepository.findByEmail(identifier);}
+  async loginStep1(username) {
+    const user = await userRepository.findByUsername(username);
     if (!user) {
       return { exists: false };
     }
 
-    if (user.status === USER_STATUS.SUSPENDED) {
+    if (user.status === 'suspended') {
       throw new ForbiddenError('Account is suspended. Contact support.');
     }
-    if (user.status === USER_STATUS.DISABLED) {
+    if (user.status === 'disabled') {
       throw new ForbiddenError('Account is disabled');
     }
-    if (user.status === USER_STATUS.DELETED) {
+    if (user.status === 'deleted') {
       return { exists: false };
     }
 
-    if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
-      const minutesRemaining = Math.ceil((new Date(user.lockedUntil) - new Date()) / 60000);
+    if (user.locked_until && new Date(user.locked_until) > new Date()) {
+      const minutesRemaining = Math.ceil((new Date(user.locked_until) - new Date()) / 60000);
       throw new TooManyRequestsError(`Account is locked. Try again in ${minutesRemaining} minutes.`);
     }
 
     return { exists: true, status: user.status };
   },
 
-  async loginStep2(identifier, password) {
-    let user = await userRepository.findByUsername(identifier);
-    if (!user) {user = await userRepository.findByEmail(identifier);}
+  async loginStep2(username, password) {
+    const user = await userRepository.findByUsername(username);
     if (!user) {
       throw new UnauthorizedError('Invalid credentials');
     }
 
-    if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
+    if (user.locked_until && new Date(user.locked_until) > new Date()) {
       throw new TooManyRequestsError('Account is temporarily locked. Try again later.');
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
     if (!isPasswordValid) {
       await userRepository.incrementLoginAttempts(user.id);
 
-      if (user.loginAttempts + 1 >= config.security.maxLoginAttempts) {
+      if (user.login_attempts + 1 >= config.security.maxLoginAttempts) {
         const lockUntil = new Date(Date.now() + config.security.loginLockoutMinutes * 60000);
         await userRepository.lockAccount(user.id, lockUntil);
         await logActivity(user.id, 'account_locked', 'user', user.id, {
           reason: 'Too many failed login attempts',
-          attempts: user.loginAttempts + 1,
+          attempts: user.login_attempts + 1,
         });
         throw new TooManyRequestsError('Account locked due to too many failed attempts. Try again later.');
       }
@@ -130,8 +120,8 @@ const authService = {
 
     await userRepository.resetLoginAttempts(user.id);
     await userRepository.update(user.id, {
-      lastLoginAt: new Date(),
-      lastLoginIp: null,
+      last_login_at: new Date(),
+      last_login_ip: null,
     });
 
     const tokens = this.generateTokens(user);
@@ -139,7 +129,7 @@ const authService = {
     await db.execute(
       `INSERT INTO user_sessions (user_id, token, refresh_token, ip_address, user_agent, expires_at)
        VALUES (?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY))`,
-      [user.id, tokens.accessToken, tokens.refreshToken, null, null],
+      [user.id, tokens.accessToken, tokens.refreshToken, null, null]
     );
 
     await logActivity(user.id, 'login', 'user', user.id);
@@ -149,9 +139,9 @@ const authService = {
         id: user.id,
         username: user.username,
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role?.slug,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        role: user.role_slug,
         status: user.status,
       },
       tokens,
@@ -164,31 +154,36 @@ const authService = {
       throw new NotFoundError('User not found');
     }
 
-    if (user.emailVerifiedAt) {
+    if (user.email_verified_at) {
       throw new ValidationError('Email is already verified');
     }
 
-    const [codes] = await db.query(
+    const [codes] = await db.execute(
       `SELECT * FROM verification_codes
-       WHERE user_id = ? AND code = ? AND type = ?
+       WHERE user_id = ? AND code = ? AND type = 'email_verification'
          AND used_at IS NULL AND expires_at > NOW()
        ORDER BY created_at DESC LIMIT 1`,
-      [user.id, code, VERIFICATION_TYPE.EMAIL],
+      [user.id, code]
     );
 
-    const verification = codes?.[0];
-    if (!verification) {
+    if (!codes.length) {
       throw new ValidationError('Invalid or expired verification code');
     }
 
+    const verification = codes[0];
+
+    if (verification.attempts >= verification.max_attempts) {
+      throw new ValidationError('Too many verification attempts. Request a new code.');
+    }
+
     await db.execute(
-      'UPDATE verification_codes SET used_at = NOW() WHERE id = ?',
-      [verification.id],
+      `UPDATE verification_codes SET used_at = NOW() WHERE id = ?`,
+      [verification.id]
     );
 
     await userRepository.update(user.id, {
-      status: USER_STATUS.ACTIVE,
-      emailVerifiedAt: new Date(),
+      status: 'active',
+      email_verified_at: new Date(),
     });
 
     await logActivity(user.id, 'email_verified', 'user', user.id, { email });
@@ -200,16 +195,7 @@ const authService = {
     }
 
     const tokens = this.generateTokens(user);
-    return {
-      tokens,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role?.slug,
-        status: USER_STATUS.ACTIVE,
-      },
-    };
+    return { ...tokens, user: { id: user.id, username: user.username, email: user.email, role: user.role_slug, status: 'active' } };
   },
 
   async resendVerificationCode(email) {
@@ -218,11 +204,11 @@ const authService = {
       return { message: 'If the email exists, a verification code has been sent.' };
     }
 
-    if (user.emailVerifiedAt) {
+    if (user.email_verified_at) {
       return { message: 'Email is already verified.' };
     }
 
-    const code = await this.generateVerificationCode(user.id, VERIFICATION_TYPE.EMAIL);
+    const code = await this.generateVerificationCode(user.id, 'email_verification');
 
     try {
       await emailService.sendVerificationCode(user.email, code, user.username);
@@ -240,7 +226,7 @@ const authService = {
       return { message: 'If the email exists, a password reset code has been sent.' };
     }
 
-    const code = await this.generateVerificationCode(user.id, VERIFICATION_TYPE.PASSWORD_RESET);
+    const code = await this.generateVerificationCode(user.id, 'password_reset');
 
     try {
       await emailService.sendPasswordResetCode(user.email, code, user.username);
@@ -258,44 +244,45 @@ const authService = {
       throw new NotFoundError('User not found');
     }
 
-    const [codes] = await db.query(
+    const [codes] = await db.execute(
       `SELECT * FROM verification_codes
-       WHERE user_id = ? AND code = ? AND type = ?
+       WHERE user_id = ? AND code = ? AND type = 'password_reset'
          AND used_at IS NULL AND expires_at > NOW()
        ORDER BY created_at DESC LIMIT 1`,
-      [user.id, code, VERIFICATION_TYPE.PASSWORD_RESET],
+      [user.id, code]
     );
 
-    const verification = codes?.[0];
-    if (!verification) {
+    if (!codes.length) {
       throw new ValidationError('Invalid or expired reset code');
     }
 
-    if (verification.attempts >= verification.maxAttempts) {
+    const verification = codes[0];
+
+    if (verification.attempts >= verification.max_attempts) {
       throw new ValidationError('Too many attempts. Request a new reset code.');
     }
 
     await db.execute(
-      'UPDATE verification_codes SET used_at = NOW() WHERE id = ?',
-      [verification.id],
+      `UPDATE verification_codes SET used_at = NOW() WHERE id = ?`,
+      [verification.id]
     );
 
     await db.execute(
       `UPDATE verification_codes SET used_at = NOW()
-       WHERE user_id = ? AND type = ? AND used_at IS NULL`,
-      [user.id, VERIFICATION_TYPE.PASSWORD_RESET],
+       WHERE user_id = ? AND type = 'password_reset' AND used_at IS NULL`,
+      [user.id]
     );
 
     const passwordHash = await bcrypt.hash(newPassword, config.security.bcryptSaltRounds);
     await userRepository.update(user.id, {
-      passwordHash,
-      passwordChangedAt: new Date(),
+      password_hash: passwordHash,
+      password_changed_at: new Date(),
     });
 
     await db.execute(
       `UPDATE user_sessions SET is_active = 0, revoked_at = NOW()
        WHERE user_id = ? AND is_active = 1`,
-      [user.id],
+      [user.id]
     );
 
     await logActivity(user.id, 'password_reset', 'user', user.id);
@@ -310,26 +297,27 @@ const authService = {
   },
 
   async changePassword(userId, currentPassword, newPassword) {
-    const user = await userRepository.findById(userId);
+    const [users] = await db.execute(`SELECT * FROM users WHERE id = ?`, [userId]);
+    const user = users[0];
     if (!user) {
       throw new NotFoundError('User not found');
     }
 
-    const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password_hash);
     if (!isPasswordValid) {
       throw new ValidationError('Current password is incorrect');
     }
 
     const passwordHash = await bcrypt.hash(newPassword, config.security.bcryptSaltRounds);
     await userRepository.update(userId, {
-      passwordHash,
-      passwordChangedAt: new Date(),
+      password_hash: passwordHash,
+      password_changed_at: new Date(),
     });
 
     await db.execute(
       `UPDATE user_sessions SET is_active = 0, revoked_at = NOW()
        WHERE user_id = ? AND is_active = 1`,
-      [userId],
+      [userId]
     );
 
     await logActivity(userId, 'password_changed', 'user', userId);
@@ -347,7 +335,7 @@ const authService = {
     await db.execute(
       `UPDATE user_sessions SET is_active = 0, revoked_at = NOW()
        WHERE user_id = ? AND token = ?`,
-      [userId, token],
+      [userId, token]
     );
     await logActivity(userId, 'logout', 'user', userId);
     return { message: 'Logged out successfully.' };
@@ -358,12 +346,12 @@ const authService = {
     if (!user) {
       throw new NotFoundError('User not found');
     }
-    const libraryCount = await libraryRepository.getLibraryCount(userId);
-    const [orderStats] = await db.query(
+    const libraryCount = await require('../repositories/libraryRepository').getLibraryCount(userId);
+    const [orderStats] = await db.execute(
       `SELECT COUNT(*) as total_purchases,
               COALESCE(SUM(total_amount), 0) as total_spent
        FROM orders WHERE user_id = ? AND payment_status = 'paid'`,
-      [userId],
+      [userId]
     );
 
     return {
@@ -371,28 +359,27 @@ const authService = {
       username: user.username,
       email: user.email,
       phone: user.phone,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      avatarUrl: user.avatarUrl,
-      role: user.role?.slug,
-      roleName: user.role?.name,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      avatarUrl: user.avatar_url,
+      role: user.role_slug,
+      roleName: user.role_name,
       status: user.status,
-      isVerified: user.status === 'active',
-      emailVerifiedAt: user.emailVerifiedAt,
-      lastLoginAt: user.lastLoginAt,
+      emailVerifiedAt: user.email_verified_at,
+      lastLoginAt: user.last_login_at,
       libraryCount,
-      totalPurchases: orderStats[0]?.total_purchases || 0,
-      totalSpent: Number(orderStats[0]?.total_spent) || 0,
-      createdAt: user.createdAt,
+      totalPurchases: orderStats[0].total_purchases,
+      totalSpent: orderStats[0].total_spent,
+      createdAt: user.created_at,
     };
   },
 
   async updateProfile(userId, data) {
     const updates = {};
-    if (data.firstName !== undefined) {updates.firstName = data.firstName;}
-    if (data.lastName !== undefined) {updates.lastName = data.lastName;}
-    if (data.phone !== undefined) {updates.phone = parsePhoneNumber(data.phone);}
-    if (data.avatarUrl !== undefined) {updates.avatarUrl = data.avatarUrl;}
+    if (data.firstName !== undefined) updates.first_name = data.firstName;
+    if (data.lastName !== undefined) updates.last_name = data.lastName;
+    if (data.phone !== undefined) updates.phone = parsePhoneNumber(data.phone);
+    if (data.avatarUrl !== undefined) updates.avatar_url = data.avatarUrl;
 
     if (Object.keys(updates).length === 0) {
       return { message: 'No changes to update.' };
@@ -408,19 +395,16 @@ const authService = {
     await db.execute(
       `UPDATE verification_codes SET used_at = NOW()
        WHERE user_id = ? AND type = ? AND used_at IS NULL`,
-      [userId, type],
+      [userId, type]
     );
 
     const code = generateVerificationCode();
-    const expiryMinutes = type === VERIFICATION_TYPE.PASSWORD_RESET
-      ? config.security.passwordResetExpiryMinutes
-      : config.security.verificationCodeExpiryMinutes;
-    const expiresAt = new Date(Date.now() + expiryMinutes * 60000);
+    const expiresAt = new Date(Date.now() + config.security.verificationCodeExpiryMinutes * 60000);
 
     await db.execute(
       `INSERT INTO verification_codes (user_id, code, type, expires_at)
        VALUES (?, ?, ?, ?)`,
-      [userId, code, type, expiresAt],
+      [userId, code, type, expiresAt]
     );
 
     return code;
@@ -431,14 +415,14 @@ const authService = {
       {
         sub: user.id,
         username: user.username,
-        role: user.role?.slug,
+        role: user.role_slug,
       },
       config.jwt.secret,
       {
         expiresIn: config.jwt.expiresIn,
         issuer: config.jwt.issuer,
         jwtid: crypto.randomUUID(),
-      },
+      }
     );
 
     const refreshToken = jwt.sign(
@@ -448,7 +432,7 @@ const authService = {
         expiresIn: config.jwt.refreshExpiresIn,
         issuer: config.jwt.issuer,
         jwtid: crypto.randomUUID(),
-      },
+      }
     );
 
     return { accessToken, refreshToken };
@@ -464,31 +448,31 @@ const authService = {
         throw new UnauthorizedError('Invalid refresh token');
       }
 
-      const [sessions] = await db.query(
-        'SELECT * FROM user_sessions WHERE refresh_token = ? AND is_active = 1 AND revoked_at IS NULL',
-        [refreshToken],
+      const [sessions] = await db.execute(
+        `SELECT * FROM user_sessions WHERE refresh_token = ? AND is_active = 1 AND revoked_at IS NULL`,
+        [refreshToken]
       );
 
-      if (!sessions?.length) {
+      if (!sessions.length) {
         throw new UnauthorizedError('Session expired or revoked');
       }
 
       const user = await userRepository.findById(decoded.sub);
-      if (!user || user.status === USER_STATUS.DELETED || user.status === USER_STATUS.SUSPENDED) {
+      if (!user || user.status === 'deleted' || user.status === 'suspended') {
         throw new UnauthorizedError('Account access restricted');
       }
 
       const tokens = this.generateTokens(user);
 
       await db.execute(
-        `UPDATE user_sessions SET token = ?, refresh_token = ?, expires_at = DATE_ADD(NOW(), INTERVAL 7 DAY)
+        `UPDATE user_sessions SET token = ?, refresh_token = ?, expires_at = DATE_ADD(NOW(), INTERVAL 7 DAY), is_active = 1, revoked_at = NULL
          WHERE id = ?`,
-        [tokens.accessToken, tokens.refreshToken, sessions[0].id],
+        [tokens.accessToken, tokens.refreshToken, sessions[0].id]
       );
 
       return tokens;
     } catch (err) {
-      if (err instanceof UnauthorizedError) {throw err;}
+      if (err instanceof UnauthorizedError) throw err;
       throw new UnauthorizedError('Invalid or expired refresh token');
     }
   },

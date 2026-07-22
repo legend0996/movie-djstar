@@ -39,7 +39,7 @@ const mpesaService = {
             }
 
             accessToken = parsed.access_token;
-            tokenExpiry = Date.now() + (parseInt(parsed.expires_in, 10) - 60) * 1000;
+            tokenExpiry = Date.now() + (parseInt(parsed.expires_in) - 60) * 1000;
             resolve(accessToken);
           } catch (err) {
             logger.error('M-Pesa token parse failed', { error: err.message, data });
@@ -221,18 +221,16 @@ const mpesaService = {
     }
 
     const callback = body.Body.stkCallback;
-    const metadataItems = callback.CallbackMetadata?.Item || [];
-
     return {
       valid: true,
       merchantRequestID: callback.MerchantRequestID,
       checkoutRequestID: callback.CheckoutRequestID,
       resultCode: callback.ResultCode,
       resultDesc: callback.ResultDesc,
-      amount: metadataItems.find(i => i.Name === 'Amount')?.Value,
-      mpesaReceipt: metadataItems.find(i => i.Name === 'MpesaReceiptNumber')?.Value,
-      phoneNumber: metadataItems.find(i => i.Name === 'PhoneNumber')?.Value,
-      transactionDate: metadataItems.find(i => i.Name === 'TransactionDate')?.Value,
+      amount: callback.CallbackMetadata?.Item?.find(i => i.Name === 'Amount')?.Value,
+      mpesaReceipt: callback.CallbackMetadata?.Item?.find(i => i.Name === 'MpesaReceiptNumber')?.Value,
+      phoneNumber: callback.CallbackMetadata?.Item?.find(i => i.Name === 'PhoneNumber')?.Value,
+      transactionDate: callback.CallbackMetadata?.Item?.find(i => i.Name === 'TransactionDate')?.Value,
     };
   },
 

@@ -5,7 +5,8 @@ const { paginate } = require('../utils/helpers');
 const reviewController = {
   async create(req, res, next) {
     try {
-      const { movieId, rating, comment } = req.body;
+      const { rating, comment } = req.body;
+      const movieId = parseInt(req.params.movieId);
       const review = await reviewService.create(req.user.id, movieId, rating, comment);
       return response.created(res, review, 'Review submitted successfully');
     } catch (err) {

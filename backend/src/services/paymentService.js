@@ -1,4 +1,5 @@
 const config = require('../config');
+const prisma = require('../config/database');
 const mpesaService = require('./mpesaService');
 const emailService = require('./emailService');
 const movieRepository = require('../repositories/movieRepository');
@@ -6,15 +7,17 @@ const orderRepository = require('../repositories/orderRepository');
 const transactionRepository = require('../repositories/transactionRepository');
 const libraryRepository = require('../repositories/libraryRepository');
 const receiptRepository = require('../repositories/receiptRepository');
+const revenueRepository = require('../repositories/revenueRepository');
 const userRepository = require('../repositories/userRepository');
 const notificationService = require('./notificationService');
-const { generateOrderNumber, generateReceiptNumber } = require('../utils/helpers');
+const { generateOrderNumber, generateReceiptNumber, paginate } = require('../utils/helpers');
 const { logActivity } = require('../middleware/activityLogger');
 const {
   NotFoundError,
   ValidationError,
   PaymentError,
   ConflictError,
+  ForbiddenError,
 } = require('../utils/errors');
 const { MOVIE_STATUS, ORDER_STATUS, TRANSACTION_STATUS } = require('../constants');
 const logger = require('../utils/logger');
@@ -197,21 +200,13 @@ const paymentService = {
     });
 
     if (callback.resultCode === 0) {
-      try {
-        const prisma = require('../config/database');
-        const r = await prisma.transaction.update({
-          where: { id: transaction.id },
-          data: {
-            status: 'successful',
-            mpesaReceipt: callback.mpesaReceipt,
-            transactionDate: callback.transactionDate
-              ? new Date(callback.transactionDate.toString())
-              : new Date(),
-          },
-        });
-      } catch (e) {
-        console.log('DIRECT_UPDATE_ERROR_MSG=' + JSON.stringify({message: e.message, code: e.code, name: e.name, stack: (e.stack || '').slice(0, 200)}));
-      }
+      await transactionRepository.update(transaction.id, {
+        status: TRANSACTION_STATUS.SUCCESS,
+        mpesaReceipt: callback.mpesaReceipt,
+        transactionDate: callback.transactionDate
+          ? new Date(callback.transactionDate.toString())
+          : new Date(),
+      });
 
       await orderRepository.updateStatus(transaction.orderId, {
         status: ORDER_STATUS.COMPLETED,
@@ -235,15 +230,13 @@ const paymentService = {
       const developerCommission = (transaction.amount * commissionPercentage) / 100;
       const ownerEarnings = transaction.amount - developerCommission;
 
-      await prisma.revenueRecord.create({
-        data: {
-          orderId: transaction.orderId,
-          transactionId: transaction.id,
-          totalAmount: transaction.amount,
-          developerCommission,
-          ownerEarnings,
-          commissionPercentage,
-        },
+      await revenueRepository.create({
+        orderId: transaction.orderId,
+        transactionId: transaction.id,
+        totalAmount: transaction.amount,
+        developerCommission,
+        ownerEarnings,
+        commissionPercentage,
       });
 
       const receiptNumber = generateReceiptNumber();
@@ -309,7 +302,7 @@ const paymentService = {
     });
 
     await orderRepository.updateStatus(transaction.orderId, {
-      status: ORDER_STATUS.CANCELLED,
+      status: ORDER_STATUS.FAILED,
       paymentStatus: 'failed',
     });
 
@@ -336,9 +329,9 @@ const paymentService = {
       return;
     }
 
-    if (transaction.status === 'processing') {
+    if (transaction.status === TRANSACTION_STATUS.PROCESSING) {
       await transactionRepository.update(transaction.id, {
-        status: 'expired',
+        status: TRANSACTION_STATUS.EXPIRED,
         resultDescription: 'Payment request timed out',
       });
 
@@ -377,6 +370,22 @@ const paymentService = {
       message: transaction.resultDescription || undefined,
       mpesaReceipt: transaction.mpesaReceipt,
     };
+  },
+
+  async getPurchaseHistory(userId, { page, limit } = {}) {
+    const { page: p, limit: l } = paginate(page, limit);
+    return orderRepository.findByUser(userId, { page: p, limit: l });
+  },
+
+  async getOrderDetails(orderId, userId, userRole) {
+    const order = await orderRepository.findById(orderId);
+    if (!order) {
+      throw new NotFoundError('Order not found');
+    }
+    if (order.userId !== userId && userRole !== 'developer') {
+      throw new ForbiddenError('Forbidden');
+    }
+    return order;
   },
 };
 
